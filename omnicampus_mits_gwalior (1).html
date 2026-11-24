@@ -1,0 +1,4259 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omnicampus — MITS Gwalior</title>
+    <meta name="description" content="Omnicampus - MITS Gwalior peer-to-peer Q&A platform and academic credit tracker.">
+    <meta name="theme-color" content="#0E1113">
+
+    <!-- inline grad cap favicon to avoid /favicon.ico 404 -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2310B981'/%3E%3Cpath d='M25 14v5M7 14l9-4.5L25 14l-9 4.5L7 14zm3.5 1.8v4.2c0 1.6 2.5 2.8 5.5 2.8s5.5-1.2 5.5-2.8v-4.2' fill='none' stroke='%2305130E' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+    <!-- warm up firebase connections early -->
+    <link rel="dns-prefetch" href="https://www.gstatic.com">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com">
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+    <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com">
+    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+
+    <!-- apply saved theme before first paint -->
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('omnicampus_theme') === 'light' ? 'light' : 'dark';
+                document.documentElement.dataset.theme = t;
+                var m = document.querySelector('meta[name="theme-color"]');
+                if (m) m.content = t === 'light' ? '#DFCEB6' : '#0E1113';
+            } catch (e) {
+                document.documentElement.dataset.theme = 'dark';
+            }
+        })();
+    </script>
+
+    <style>
+        /* dark theme (default) */
+        :root,
+        [data-theme="dark"] {
+            --bg-page: #0E1113;
+            --bg-surface: #161B1E;
+            --bg-nav: rgba(22, 27, 30, 0.94);
+            --bg-inner: #1D2328;
+            --bg-hover: #242C32;
+            --border: #262E35;
+            --border-strong: #36414A;
+
+            --accent: #10B981;
+            --accent-hover: #059669;
+            --accent-text: #34D399;
+            --accent-soft: rgba(16, 185, 129, 0.14);
+            --accent-border: rgba(16, 185, 129, 0.42);
+            --accent-glow: 0 0 18px rgba(16, 185, 129, 0.22);
+            --on-accent: #04150F;
+
+            --text-primary: #F3F5F7;
+            --text-secondary: #A1A9B3;
+            --text-muted: #7C8591;
+            --text-body: #D6DBE0;
+
+            --pill-bg: #1D2328;
+            --pill-text: #C0C7D0;
+            --pill-border: #262E35;
+
+            --danger: #EF4444;
+            --danger-hover: #DC2626;
+            --danger-soft: rgba(239, 68, 68, 0.14);
+            --danger-border: rgba(239, 68, 68, 0.42);
+            --danger-text: #FCA5A5;
+
+            --warn: #F59E0B;
+            --warn-soft: rgba(245, 158, 11, 0.15);
+            --warn-border: rgba(245, 158, 11, 0.44);
+            --warn-text: #FCD34D;
+
+            --info: #38BDF8;
+            --info-soft: rgba(56, 189, 248, 0.14);
+            --info-border: rgba(56, 189, 248, 0.40);
+            --info-text: #7DD3FC;
+
+            --rank1-bg: rgba(245, 158, 11, 0.16);
+            --rank1-text: #FCD34D;
+            --rank1-border: rgba(245, 158, 11, 0.45);
+            --rank2-bg: rgba(209, 213, 219, 0.14);
+            --rank2-text: #E5E7EB;
+            --rank2-border: rgba(209, 213, 219, 0.38);
+            --rank3-bg: rgba(217, 119, 6, 0.16);
+            --rank3-text: #FBBF24;
+            --rank3-border: rgba(217, 119, 6, 0.45);
+
+            --vote-bg: rgba(14, 17, 19, 0.52);
+            --shadow-card: 0 6px 20px rgba(0, 0, 0, 0.32);
+            --shadow-modal: 0 22px 56px rgba(0, 0, 0, 0.7);
+            --radial-1: rgba(16, 185, 129, 0.11);
+            --radial-2: rgba(16, 185, 129, 0.06);
+            --backdrop: rgba(6, 9, 12, 0.84);
+        }
+
+        /* light theme - warm sand-beige, cream & espresso */
+        [data-theme="light"] {
+            --bg-page: #DFCEB6;
+            --bg-surface: #F7F3EB;
+            --bg-nav: rgba(247, 243, 235, 0.95);
+            --bg-inner: #EBE2D3;
+            --bg-hover: #E2D5C0;
+            --border: #D2BFA3;
+            --border-strong: #B9A282;
+
+            --accent: #5C3A21;
+            --accent-hover: #462B17;
+            --accent-text: #5C3A21;
+            --accent-soft: #E8DBC8;
+            --accent-border: rgba(92, 58, 33, 0.44);
+            --accent-glow: 0 4px 14px rgba(92, 58, 33, 0.22);
+            --on-accent: #F7F3EB;
+
+            --text-primary: #14110F;
+            --text-secondary: #4D3F33;
+            --text-muted: #665546;
+            --text-body: #201914;
+
+            --pill-bg: #EBE2D3;
+            --pill-text: #271E16;
+            --pill-border: #D1BFA7;
+
+            --danger: #B42318;
+            --danger-hover: #912018;
+            --danger-soft: rgba(180, 35, 24, 0.10);
+            --danger-border: rgba(180, 35, 24, 0.36);
+            --danger-text: #912018;
+
+            --warn: #8A530B;
+            --warn-soft: rgba(138, 83, 11, 0.12);
+            --warn-border: rgba(138, 83, 11, 0.38);
+            --warn-text: #6B3E05;
+
+            --info: #1D4ED8;
+            --info-soft: rgba(29, 78, 216, 0.10);
+            --info-border: rgba(29, 78, 216, 0.32);
+            --info-text: #1E3A8A;
+
+            --rank1-bg: #EAD7B0;
+            --rank1-text: #6B3E05;
+            --rank1-border: #C29B57;
+            --rank2-bg: #E5DDD0;
+            --rank2-text: #382F27;
+            --rank2-border: #B3A490;
+            --rank3-bg: #E9D0B8;
+            --rank3-text: #653512;
+            --rank3-border: #BD8F64;
+
+            --vote-bg: rgba(223, 206, 182, 0.42);
+            --shadow-card: 0 5px 16px rgba(58, 38, 21, 0.08);
+            --shadow-modal: 0 20px 50px rgba(42, 26, 14, 0.28);
+            --radial-1: rgba(92, 58, 33, 0.10);
+            --radial-2: rgba(92, 58, 33, 0.06);
+            --backdrop: rgba(17, 14, 11, 0.72);
+        }
+
+        :root {
+            --r-sm: 8px;
+            --r-md: 12px;
+            --r-lg: 16px;
+            --r-pill: 9999px;
+            --ease: 0.16s ease;
+        }
+
+        /* base reset */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            min-height: 100%;
+            width: 100%;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        button, input, textarea, select {
+            font: inherit;
+            color: inherit;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+
+        button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .hidden { display: none !important; }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* top-left theme toggle */
+        .theme-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 36px;
+            padding: 0 12px;
+            border-radius: var(--r-pill);
+            background: var(--bg-inner);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: border-color var(--ease), background var(--ease), color var(--ease);
+        }
+
+        .theme-btn:hover {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+            color: var(--accent-text);
+        }
+
+        .theme-btn-fixed {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 170;
+            background: var(--bg-surface);
+            box-shadow: var(--shadow-card);
+        }
+
+        .spinner-sm {
+            width: 14px;
+            height: 14px;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            animation: spin 0.65s linear infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* runtime / protocol error banner */
+        #global-error-banner {
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            max-width: 680px;
+            margin: 0 auto;
+            z-index: 450;
+            padding: 12px 16px;
+            border-radius: var(--r-md);
+            background: var(--bg-surface);
+            border: 1px solid var(--danger-border);
+            color: var(--danger-text);
+            box-shadow: var(--shadow-modal);
+            font-size: 0.83rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        /* toasts */
+        #toast-container {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 400;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: min(380px, calc(100vw - 32px));
+            pointer-events: none;
+        }
+
+        .toast {
+            pointer-events: auto;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: var(--r-md);
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-card);
+            font-size: 0.85rem;
+            font-weight: 500;
+            animation: toastIn 0.2s ease forwards;
+        }
+
+        .toast-success { border-color: var(--accent-border); }
+        .toast-error { border-color: var(--danger-border); }
+        .toast-warning { border-color: var(--warn-border); }
+
+        .toast-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 800;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .toast-success .toast-icon { background: var(--accent-soft); color: var(--accent-text); }
+        .toast-error .toast-icon { background: var(--danger-soft); color: var(--danger); }
+        .toast-warning .toast-icon { background: var(--warn-soft); color: var(--warn); }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(18px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* buttons & common ui */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 9px 15px;
+            border-radius: var(--r-sm);
+            font-size: 0.85rem;
+            font-weight: 700;
+            white-space: nowrap;
+            transition: background var(--ease), border-color var(--ease), color var(--ease), box-shadow var(--ease);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--on-accent);
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-hover);
+            box-shadow: var(--accent-glow);
+        }
+
+        .btn-secondary {
+            background: var(--bg-inner);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--bg-hover);
+            border-color: var(--border-strong);
+        }
+
+        .btn-accent-outline {
+            background: var(--accent-soft);
+            color: var(--accent-text);
+            border: 1px solid var(--accent-border);
+        }
+        .btn-accent-outline:hover:not(:disabled) {
+            background: var(--accent);
+            color: var(--on-accent);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #FFFFFF;
+        }
+        .btn-danger:hover:not(:disabled) { background: var(--danger-hover); }
+
+        .btn-danger-outline {
+            background: var(--danger-soft);
+            color: var(--danger-text);
+            border: 1px solid var(--danger-border);
+        }
+        .btn-danger-outline:hover:not(:disabled) {
+            background: var(--danger);
+            color: #FFFFFF;
+        }
+
+        .btn-link {
+            color: var(--accent-text);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 2px 4px;
+        }
+        .btn-link:hover { text-decoration: underline; }
+
+        .btn-sm { padding: 6px 11px; font-size: 0.78rem; }
+        .btn-full { width: 100%; padding: 11px 16px; }
+
+        .card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            box-shadow: var(--shadow-card);
+        }
+
+        .card-pad { padding: 18px; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px;
+            border-radius: var(--r-pill);
+            font-size: 0.71rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .badge-pill { background: var(--pill-bg); color: var(--pill-text); border: 1px solid var(--pill-border); }
+        .badge-accent { background: var(--accent-soft); color: var(--accent-text); border: 1px solid var(--accent-border); }
+        .badge-solid-accent { background: var(--accent); color: var(--on-accent); }
+        .badge-warn { background: var(--warn-soft); color: var(--warn-text); border: 1px solid var(--warn-border); }
+        .badge-danger { background: var(--danger-soft); color: var(--danger-text); border: 1px solid var(--danger-border); }
+        .badge-info { background: var(--info-soft); color: var(--info-text); border: 1px solid var(--info-border); }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--accent-soft);
+            border: 1px solid var(--accent-border);
+            color: var(--accent-text);
+            font-weight: 800;
+            font-size: 0.78rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .avatar-faculty {
+            background: var(--warn-soft);
+            border-color: var(--warn-border);
+            color: var(--warn-text);
+        }
+
+        /* form controls */
+        .form-group { margin-bottom: 14px; }
+
+        .form-label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            gap: 8px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.74rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .form-label-row .form-label { margin-bottom: 0; }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 10px 13px;
+            border-radius: var(--r-sm);
+            background: var(--bg-inner);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: border-color var(--ease), box-shadow var(--ease);
+        }
+
+        .form-input::placeholder, .form-textarea::placeholder { color: var(--text-muted); }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        .form-hint {
+            margin-top: 5px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .batch-preview { color: var(--accent-text); font-weight: 700; }
+
+        /* login & verify screens */
+        .gate-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 68px 16px 28px;
+            background:
+                radial-gradient(circle at 18% 12%, var(--radial-1), transparent 40%),
+                radial-gradient(circle at 82% 88%, var(--radial-2), transparent 42%),
+                var(--bg-page);
+        }
+
+        .gate-card {
+            width: 100%;
+            max-width: 448px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            box-shadow: var(--shadow-modal);
+            overflow: hidden;
+        }
+
+        .gate-header {
+            padding: 24px 24px 18px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .gate-emblem {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 12px;
+            border-radius: 14px;
+            background: var(--accent);
+            color: var(--on-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--accent-glow);
+        }
+
+        .gate-title { font-size: 1.48rem; font-weight: 800; letter-spacing: -0.02em; }
+        .gate-subtitle { margin-top: 4px; font-size: 0.85rem; color: var(--text-secondary); }
+
+        .gate-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+            padding: 4px 12px;
+            border-radius: var(--r-pill);
+            background: var(--accent-soft);
+            border: 1px solid var(--accent-border);
+            color: var(--accent-text);
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        .gate-body { padding: 22px 24px 24px; }
+
+        .protocol-warning {
+            margin-bottom: 14px;
+            padding: 11px 13px;
+            border-radius: var(--r-sm);
+            background: var(--warn-soft);
+            border: 1px solid var(--warn-border);
+            font-size: 0.8rem;
+            line-height: 1.45;
+        }
+
+        .protocol-warning strong { color: var(--warn-text); }
+
+        .session-pill {
+            margin-bottom: 14px;
+            padding: 8px 12px;
+            border-radius: var(--r-sm);
+            background: var(--bg-inner);
+            border: 1px solid var(--border);
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .segmented {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            padding: 4px;
+            background: var(--bg-inner);
+            border: 1px solid var(--border);
+            border-radius: var(--r-md);
+            margin-bottom: 16px;
+        }
+
+        .segmented-btn {
+            padding: 8px 10px;
+            border-radius: var(--r-sm);
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            transition: background var(--ease), color var(--ease);
+        }
+
+        .segmented-btn:hover { color: var(--text-primary); }
+        .segmented-btn.active { background: var(--accent); color: var(--on-accent); }
+
+        .role-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .role-card {
+            padding: 10px 12px;
+            border-radius: var(--r-md);
+            background: var(--bg-inner);
+            border: 1px solid var(--border);
+            text-align: left;
+            transition: border-color var(--ease), background var(--ease);
+        }
+
+        .role-card:hover { border-color: var(--border-strong); }
+        .role-card.active { border-color: var(--accent); background: var(--accent-soft); }
+        .role-card-title { font-size: 0.85rem; font-weight: 700; }
+        .role-card.active .role-card-title { color: var(--accent-text); }
+        .role-card-desc { font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px; }
+
+        .alert-box {
+            margin-bottom: 14px;
+            padding: 10px 12px;
+            border-radius: var(--r-sm);
+            font-size: 0.82rem;
+            line-height: 1.44;
+        }
+
+        .alert-error { background: var(--danger-soft); border: 1px solid var(--danger-border); color: var(--danger-text); }
+        .alert-info { background: var(--accent-soft); border: 1px solid var(--accent-border); color: var(--text-primary); }
+
+        .verify-email-box {
+            margin: 12px 0 14px;
+            padding: 11px 14px;
+            border-radius: var(--r-sm);
+            background: var(--bg-inner);
+            border: 1px solid var(--border);
+            font-weight: 700;
+            font-size: 0.92rem;
+            color: var(--accent-text);
+            text-align: center;
+            word-break: break-all;
+        }
+
+        .verify-steps { font-size: 0.84rem; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.55; }
+        .verify-actions { display: flex; flex-direction: column; gap: 10px; }
+
+        /* sticky navbar */
+        #appView { min-height: 100vh; width: 100%; display: flex; flex-direction: column; }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 120;
+            width: 100%;
+            background: var(--bg-nav);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .navbar-inner {
+            max-width: 1220px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .nav-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            text-align: left;
+            flex-shrink: 0;
+        }
+
+        .nav-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--accent);
+            color: var(--on-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: var(--accent-glow);
+        }
+
+        .nav-brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+        .nav-brand-name { font-size: 1rem; font-weight: 800; letter-spacing: -0.02em; }
+        .nav-brand-sub { font-size: 0.64rem; font-weight: 700; color: var(--accent-text); letter-spacing: 0.04em; }
+
+        .nav-search {
+            flex: 1 1 165px;
+            min-width: 140px;
+            max-width: 270px;
+            position: relative;
+        }
+
+        .nav-search svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .nav-search input {
+            width: 100%;
+            padding: 8px 30px 8px 34px;
+            border-radius: var(--r-pill);
+            background: var(--bg-inner);
+            border: 1px solid var(--border);
+            font-size: 0.83rem;
+        }
+
+        .nav-search input::placeholder { color: var(--text-muted); }
+        .nav-search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+        .search-clear {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+        }
+
+        .search-clear:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+        .nav-tabs {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px;
+            background: var(--bg-inner);
+            border: 1px solid var(--border);
+            border-radius: var(--r-md);
+            flex-shrink: 0;
+        }
+
+        .nav-tab {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 6px 11px;
+            border-radius: var(--r-sm);
+            font-size: 0.81rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            transition: background var(--ease), color var(--ease);
+        }
+
+        .nav-tab:hover { color: var(--text-primary); }
+        .nav-tab.active { background: var(--accent); color: var(--on-accent); }
+
+        .tab-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 19px;
+            height: 19px;
+            padding: 0 6px;
+            border-radius: var(--r-pill);
+            background: var(--warn);
+            color: #FFFFFF;
+            font-size: 0.69rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .nav-tab.active .tab-badge { background: var(--on-accent); color: var(--accent); }
+
+        .nav-user { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 11px 4px 5px;
+            border-radius: var(--r-pill);
+            background: var(--bg-inner);
+            border: 1px solid var(--border);
+        }
+
+        .user-pill-info { display: flex; flex-direction: column; line-height: 1.15; }
+        .user-pill-name {
+            font-size: 0.78rem;
+            font-weight: 700;
+            max-width: 110px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .user-pill-meta { font-size: 0.69rem; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
+        .pts-accent { color: var(--accent-text); font-weight: 700; }
+
+        .logout-btn {
+            padding: 7px 10px;
+            border-radius: var(--r-sm);
+            background: var(--bg-inner);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            transition: background var(--ease), border-color var(--ease), color var(--ease);
+        }
+
+        .logout-btn:hover { color: var(--danger-text); border-color: var(--danger-border); background: var(--danger-soft); }
+
+        /* main layout - 1220px container keeps right sidebar unclipped */
+        .main-wrap {
+            max-width: 1220px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 22px 20px 64px;
+            flex: 1;
+        }
+
+        .feed-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 300px;
+            gap: 20px;
+            align-items: start;
+            width: 100%;
+        }
+
+        .feed-col, .sidebar { min-width: 0; }
+        .sidebar { position: sticky; top: 76px; display: flex; flex-direction: column; gap: 16px; }
+
+        /* composer bar & filter pills */
+        .composer-bar {
+            width: 100%;
+            margin-bottom: 16px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: border-color var(--ease);
+        }
+
+        .composer-bar:hover { border-color: var(--accent-border); }
+
+        .composer-placeholder {
+            flex: 1;
+            min-width: 0;
+            padding: 10px 14px;
+            border-radius: var(--r-md);
+            background: var(--bg-inner);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.87rem;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .composer-bar:hover .composer-placeholder { border-color: var(--accent); color: var(--text-primary); }
+
+        .filter-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+
+        .filter-pill {
+            padding: 6px 13px;
+            border-radius: var(--r-pill);
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.79rem;
+            font-weight: 700;
+            transition: background var(--ease), border-color var(--ease), color var(--ease);
+        }
+
+        .filter-pill:hover { border-color: var(--border-strong); color: var(--text-primary); }
+        .filter-pill.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+        /* post cards */
+        .posts-list { display: flex; flex-direction: column; gap: 14px; }
+
+        .post-card {
+            display: flex;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            box-shadow: var(--shadow-card);
+            overflow: hidden;
+            content-visibility: auto;
+            contain-intrinsic-size: 0 220px;
+            transition: border-color var(--ease);
+        }
+
+        .post-card:hover { border-color: var(--border-strong); }
+        .post-card.is-solved { border-color: var(--accent-border); }
+
+        .vote-col {
+            width: 52px;
+            flex-shrink: 0;
+            background: var(--vote-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 14px 6px;
+            gap: 4px;
+        }
+
+        .vote-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: var(--r-sm);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background var(--ease), color var(--ease);
+        }
+
+        .vote-btn:hover { background: var(--bg-inner); color: var(--accent-text); }
+        .vote-btn.upvoted { background: var(--accent-soft); color: var(--accent-text); border: 1px solid var(--accent-border); }
+        .vote-count { font-size: 0.82rem; font-weight: 800; }
+        .vote-count.upvoted { color: var(--accent-text); }
+
+        .post-main { flex: 1; min-width: 0; padding: 15px 18px; display: flex; flex-direction: column; gap: 10px; }
+
+        .post-meta-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+        .post-author-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font-size: 0.78rem; color: var(--text-secondary); }
+        .post-author-name { font-weight: 700; color: var(--text-primary); }
+
+        .post-title { font-size: 1.06rem; font-weight: 700; line-height: 1.35; word-break: break-word; }
+        .post-body { font-size: 0.9rem; color: var(--text-body); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+
+        .post-img-box {
+            margin-top: 2px;
+            border-radius: var(--r-md);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: var(--bg-inner);
+            cursor: zoom-in;
+            max-height: 380px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .post-img-box img {
+            width: 100%;
+            height: auto;
+            max-height: 380px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .post-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .post-act-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: var(--r-sm);
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            transition: background var(--ease), color var(--ease);
+        }
+
+        .post-act-btn:hover { background: var(--bg-inner); color: var(--text-primary); }
+        .post-act-btn.active { color: var(--accent-text); background: var(--accent-soft); }
+        .post-del-btn { color: var(--danger-text); }
+        .post-del-btn:hover { color: #FFFFFF; background: var(--danger); }
+
+        .load-more-wrap { display: flex; justify-content: center; margin-top: 18px; }
+
+        /* comments / solutions drawer */
+        .comments-drawer {
+            margin-top: 4px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .comment-form { display: flex; gap: 8px; align-items: flex-start; }
+
+        .comment-input {
+            flex: 1;
+            min-height: 40px;
+            max-height: 140px;
+            resize: vertical;
+            padding: 9px 12px;
+            border-radius: var(--r-sm);
+            background: var(--bg-inner);
+            border: 1px solid var(--border);
+            font-size: 0.86rem;
+        }
+
+        .comment-input:focus { outline: none; border-color: var(--accent); }
+        .comments-list { display: flex; flex-direction: column; gap: 10px; }
+
+        .comment-item {
+            padding: 12px 14px;
+            border-radius: var(--r-md);
+            background: var(--bg-inner);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .comment-item.approved { background: var(--accent-soft); border-color: var(--accent); }
+        .comment-item.revoked { background: var(--danger-soft); border-color: var(--danger-border); }
+
+        .comment-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+        .comment-author { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font-size: 0.77rem; color: var(--text-secondary); }
+        .comment-author strong { color: var(--text-primary); }
+        .comment-text { font-size: 0.87rem; color: var(--text-body); white-space: pre-wrap; word-break: break-word; }
+        .comment-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+
+        /* sidebar & stats */
+        .sidebar-title {
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .mini-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .mini-stat { padding: 11px 12px; border-radius: var(--r-md); background: var(--bg-inner); border: 1px solid var(--border); min-width: 0; }
+        .mini-stat-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); }
+        .mini-stat-val { font-size: 1.38rem; font-weight: 800; margin-top: 2px; }
+        .mini-stat-val.accent { color: var(--accent-text); }
+        .mini-stat-val.warn { color: var(--warn-text); }
+
+        .prog-head { display: flex; justify-content: space-between; gap: 8px; font-size: 0.77rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; }
+        .prog-head span:last-child { color: var(--accent-text); }
+        .prog-track { width: 100%; height: 10px; border-radius: var(--r-pill); background: var(--bg-inner); border: 1px solid var(--border); overflow: hidden; }
+        .prog-fill { height: 100%; border-radius: var(--r-pill); background: var(--accent); transition: width 0.35s ease; }
+
+        .rules-list { list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 0.81rem; color: var(--text-secondary); }
+        .rules-list li { display: flex; align-items: flex-start; gap: 9px; }
+        .rules-num { color: var(--accent-text); font-weight: 800; flex-shrink: 0; }
+
+        .sec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+        .sec-title { font-size: 1.38rem; font-weight: 800; letter-spacing: -0.02em; }
+        .sec-sub { font-size: 0.86rem; color: var(--text-secondary); margin-top: 2px; }
+
+        .stats-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .stats-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px; }
+
+        .stat-card {
+            padding: 18px;
+            border-radius: var(--r-lg);
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-card);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .stat-card-hi { border-color: var(--accent-border); }
+        .stat-label { font-size: 0.73rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
+        .stat-num { font-size: 1.85rem; font-weight: 800; line-height: 1.1; }
+        .stat-num.accent { color: var(--accent-text); }
+        .stat-num.warn { color: var(--warn-text); }
+        .stat-sub { font-size: 0.76rem; color: var(--text-secondary); }
+
+        /* tables */
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: var(--r-lg);
+            border: 1px solid var(--border);
+            background: var(--bg-surface);
+            box-shadow: var(--shadow-card);
+        }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.86rem; }
+
+        thead th {
+            padding: 13px 16px;
+            background: var(--bg-inner);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        tbody td { padding: 13px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: var(--bg-hover); }
+        tbody tr.me-row { background: var(--accent-soft); }
+
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 28px;
+            padding: 0 8px;
+            border-radius: var(--r-sm);
+            font-weight: 800;
+            font-size: 0.78rem;
+            background: var(--bg-inner);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .rank-1 { background: var(--rank1-bg); color: var(--rank1-text); border-color: var(--rank1-border); }
+        .rank-2 { background: var(--rank2-bg); color: var(--rank2-text); border-color: var(--rank2-border); }
+        .rank-3 { background: var(--rank3-bg); color: var(--rank3-text); border-color: var(--rank3-border); }
+
+        .stu-cell { display: flex; align-items: center; gap: 10px; }
+        .stu-name { font-weight: 700; }
+        .stu-sub { font-size: 0.74rem; color: var(--text-secondary); }
+        .text-right { text-align: right; }
+
+        .removed-sec { margin-top: 22px; }
+        .removed-bar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 13px 16px;
+            border-radius: var(--r-md);
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+        .removed-bar:hover { border-color: var(--border-strong); }
+
+        /* student credits & faculty audit */
+        .credits-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+        .history-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .history-card {
+            padding: 15px 16px;
+            border-radius: var(--r-md);
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-card);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .history-card.is-revoked { border-color: var(--danger-border); }
+
+        .history-quote {
+            padding: 9px 12px;
+            border-left: 3px solid var(--accent);
+            background: var(--bg-inner);
+            border-radius: 0 var(--r-sm) var(--r-sm) 0;
+            font-size: 0.84rem;
+            color: var(--text-body);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .history-card.is-revoked .history-quote { border-left-color: var(--danger); }
+
+        .audit-list { display: flex; flex-direction: column; gap: 18px; }
+
+        .audit-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            box-shadow: var(--shadow-card);
+            overflow: hidden;
+        }
+
+        .audit-card.ready { border-color: var(--accent); }
+
+        .audit-head {
+            padding: 16px 20px;
+            background: var(--bg-inner);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .audit-meta { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .audit-stats { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+        .audit-prog-strip {
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .audit-prog-wrap { flex: 1 1 240px; min-width: 200px; }
+        .audit-answers { padding: 14px 20px 18px; display: flex; flex-direction: column; gap: 12px; }
+
+        .audit-item {
+            padding: 14px 16px;
+            border-radius: var(--r-md);
+            background: var(--bg-inner);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .audit-item.valid { border-color: var(--accent-border); background: var(--accent-soft); }
+        .audit-item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        .audit-q-title { font-size: 0.94rem; font-weight: 700; }
+
+        .audit-ans-body {
+            padding: 10px 12px;
+            border-radius: var(--r-sm);
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            font-size: 0.87rem;
+            color: var(--text-body);
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.55;
+        }
+
+        .audit-item-foot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            font-size: 0.76rem;
+            color: var(--text-secondary);
+        }
+
+        .audit-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+        .empty-box {
+            text-align: center;
+            padding: 38px 20px;
+            border-radius: var(--r-lg);
+            background: var(--bg-surface);
+            border: 1px dashed var(--border-strong);
+            color: var(--text-secondary);
+        }
+
+        .empty-box h3 { color: var(--text-primary); font-size: 1rem; margin-bottom: 5px; }
+
+        /* modals & image lightbox */
+        .modal-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 260;
+            background: var(--backdrop);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal-box {
+            width: 100%;
+            max-width: 570px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--r-lg);
+            box-shadow: var(--shadow-modal);
+            overflow: hidden;
+            margin: auto;
+        }
+
+        .modal-head {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .modal-head h2 { font-size: 1.05rem; font-weight: 800; }
+
+        .modal-x {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-inner);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-x:hover { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+        .modal-body { padding: 20px; }
+        .composer-row { display: grid; grid-template-columns: 1fr 170px; gap: 12px; margin-bottom: 12px; }
+        .whitelist-grid { display: grid; grid-template-columns: 1.35fr 1fr 1fr auto; gap: 10px; align-items: end; }
+
+        .dropzone {
+            border: 1.5px dashed var(--border-strong);
+            border-radius: var(--r-md);
+            background: var(--bg-inner);
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: border-color var(--ease), background var(--ease);
+        }
+
+        .dropzone:hover, .dropzone.dragover { border-color: var(--accent); background: var(--accent-soft); }
+        .dropzone-label { font-size: 0.83rem; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .dropzone-label strong { color: var(--accent-text); }
+
+        .img-preview {
+            margin-top: 12px;
+            position: relative;
+            border-radius: var(--r-md);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: var(--bg-inner);
+            max-height: 235px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .img-preview img { max-width: 100%; max-height: 225px; object-fit: contain; display: block; }
+
+        .img-preview-meta {
+            position: absolute;
+            left: 10px;
+            bottom: 10px;
+            padding: 4px 10px;
+            border-radius: var(--r-pill);
+            background: var(--bg-surface);
+            border: 1px solid var(--accent-border);
+            color: var(--accent-text);
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        .img-rm-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: var(--r-sm);
+            background: var(--bg-surface);
+            border: 1px solid var(--danger-border);
+            color: var(--danger-text);
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .img-rm-btn:hover { background: var(--danger); color: #FFFFFF; }
+        .modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+
+        .lightbox-inner {
+            position: relative;
+            max-width: min(94vw, 1020px);
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .lightbox-inner img {
+            max-width: 100%;
+            max-height: 82vh;
+            border-radius: var(--r-md);
+            border: 1px solid var(--border-strong);
+            box-shadow: var(--shadow-modal);
+            object-fit: contain;
+            background: var(--bg-surface);
+        }
+
+        .lightbox-x {
+            position: fixed;
+            top: 18px;
+            right: 22px;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-strong);
+            color: var(--text-primary);
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox-x:hover { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+
+        .confirm-box {
+            width: 100%;
+            max-width: 430px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--r-lg);
+            padding: 22px;
+            box-shadow: var(--shadow-modal);
+        }
+
+        .confirm-box h2 { font-size: 1.08rem; font-weight: 800; margin-bottom: 8px; }
+        .confirm-box p { font-size: 0.87rem; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.5; }
+
+        .confirm-warn {
+            margin-bottom: 16px;
+            padding: 10px 12px;
+            border-radius: var(--r-sm);
+            background: var(--danger-soft);
+            border: 1px solid var(--danger-border);
+            color: var(--danger-text);
+            font-size: 0.82rem;
+            font-weight: 600;
+            line-height: 1.45;
+        }
+
+        /* responsive breakpoints */
+        @media (max-width: 1100px) {
+            .nav-search { order: 3; flex: 1 1 100%; max-width: none; }
+            .nav-tabs { order: 4; width: 100%; justify-content: space-between; overflow-x: auto; }
+            .nav-tab { flex: 1; }
+        }
+
+        @media (max-width: 920px) {
+            .feed-grid { grid-template-columns: 1fr; }
+            .sidebar { position: static; order: -1; }
+            .stats-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .credits-cols { grid-template-columns: 1fr; }
+            .whitelist-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 680px) {
+            .navbar-inner { padding: 10px 14px; }
+            .main-wrap { padding: 16px 14px 48px; }
+            .composer-row { grid-template-columns: 1fr; }
+            .stats-3 { grid-template-columns: 1fr; }
+            .stats-4 { grid-template-columns: 1fr; }
+            .post-card { flex-direction: column; }
+            .vote-col {
+                width: 100%;
+                flex-direction: row;
+                justify-content: flex-start;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 8px 14px;
+                gap: 8px;
+            }
+            .logout-label { display: none; }
+            .gate-body { padding: 18px 18px 20px; }
+            .role-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- toasts -->
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- visible error banner for module/network failures -->
+    <div id="global-error-banner" class="hidden" role="alert">
+        <span id="global-error-text"></span>
+        <button type="button" id="global-error-close" class="btn btn-secondary btn-sm">Dismiss</button>
+    </div>
+
+    <!-- top-left theme toggle on login & verify screens -->
+    <button type="button" id="gate-theme-btn" class="theme-btn theme-btn-fixed" aria-label="Switch color theme" title="Switch to Light Mode">
+        <span class="theme-emoji" aria-hidden="true">☀️</span>
+        <span class="theme-label">Light</span>
+    </button>
+
+    <!-- auth screen: visible immediately on first paint so page is never blank -->
+    <div id="authView" class="gate-screen">
+        <div class="gate-card">
+            <div class="gate-header">
+                <div class="gate-emblem" aria-hidden="true">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 3 3 6 3s6-1 6-3v-5"/>
+                    </svg>
+                </div>
+                <h1 class="gate-title">Omnicampus</h1>
+                <p class="gate-subtitle">MITS Gwalior Peer-to-Peer Q&amp;A &amp; Credit Tracker</p>
+                <span class="gate-chip">🔒 Institutional Email Verification</span>
+            </div>
+
+            <div class="gate-body">
+                <div id="file-warning" class="protocol-warning hidden" role="alert">
+                    <strong>⚠️ Opened via file:// protocol:</strong> Browsers block Firebase ES modules when opened directly from File Explorer. Please run via <strong>VS Code Live Server</strong> (<code>http://127.0.0.1:5500</code>) or deploy on <strong>Netlify</strong>.
+                </div>
+
+                <div id="session-checking" class="session-pill hidden">
+                    <span class="spinner-sm" aria-hidden="true"></span>
+                    <span>Checking active session...</span>
+                </div>
+
+                <div class="segmented" role="tablist">
+                    <button type="button" id="btn-mode-login" class="segmented-btn active" role="tab" aria-selected="true">Sign In</button>
+                    <button type="button" id="btn-mode-register" class="segmented-btn" role="tab" aria-selected="false">Sign Up</button>
+                </div>
+
+                <div class="role-grid">
+                    <button type="button" id="role-student" class="role-card active">
+                        <div class="role-card-title">🎓 Student</div>
+                        <div class="role-card-desc">@mitsgwl.ac.in roll ID</div>
+                    </button>
+                    <button type="button" id="role-faculty" class="role-card">
+                        <div class="role-card-title">🏛️ Faculty</div>
+                        <div class="role-card-desc">Whitelisted professor ID</div>
+                    </button>
+                </div>
+
+                <div id="auth-error" class="alert-box alert-error hidden" role="alert"></div>
+
+                <form id="auth-form" novalidate>
+                    <div class="form-group hidden" id="name-group">
+                        <label class="form-label" for="auth-name">Display Name</label>
+                        <input type="text" id="auth-name" class="form-input" placeholder="Arnav Meena" autocomplete="name">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" id="auth-email-label" for="auth-email">MITS Student Email</label>
+                        <input type="email" id="auth-email" class="form-input" placeholder="26tc1ar22@mitsgwl.ac.in" autocomplete="email" required>
+                        <div class="form-hint">
+                            <span id="auth-email-hint">e.g. 26tc1ar22@mitsgwl.ac.in or 0901cs261001@mitsgwl.ac.in</span>
+                            <span id="auth-batch-preview" class="batch-preview"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="form-label-row">
+                            <label class="form-label" for="auth-password">Password</label>
+                            <button type="button" id="btn-forgot-pw" class="btn-link">Forgot Password?</button>
+                        </div>
+                        <input type="password" id="auth-password" class="form-input" placeholder="••••••••" autocomplete="current-password" required>
+                    </div>
+
+                    <button type="submit" id="auth-submit" class="btn btn-primary btn-full">Sign In to Omnicampus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- email verification gate -->
+    <div id="verifyView" class="gate-screen hidden">
+        <div class="gate-card">
+            <div class="gate-header">
+                <div class="gate-emblem" aria-hidden="true">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                    </svg>
+                </div>
+                <h1 class="gate-title">Verify Your Inbox</h1>
+                <p class="gate-subtitle">Confirm your email before entering Omnicampus</p>
+            </div>
+
+            <div class="gate-body">
+                <div id="verify-alert" class="alert-box alert-info hidden" role="status"></div>
+                <p style="font-size: 0.86rem; color: var(--text-secondary);">We sent a verification link to:</p>
+                <div class="verify-email-box" id="verify-email-text">user@mitsgwl.ac.in</div>
+                <p class="verify-steps">
+                    Open your inbox (check <strong>Spam / Junk</strong> too), click the Firebase verification link, then hit the button below.
+                </p>
+
+                <div class="verify-actions">
+                    <button type="button" id="btn-check-verified" class="btn btn-primary btn-full">
+                        ✓ I've Verified — Enter Omnicampus
+                    </button>
+                    <button type="button" id="btn-resend-verify" class="btn btn-secondary btn-full">
+                        Resend Verification Email
+                    </button>
+                    <button type="button" id="btn-verify-signout" class="btn btn-danger-outline btn-full">
+                        Sign Out / Use Different Email
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- main app shell -->
+    <div id="appView" class="hidden">
+        <header class="navbar">
+            <div class="navbar-inner">
+                <div class="nav-left">
+                    <button type="button" id="nav-theme-btn" class="theme-btn" aria-label="Switch color theme" title="Switch to Light Mode">
+                        <span class="theme-emoji" aria-hidden="true">☀️</span>
+                        <span class="theme-label">Light</span>
+                    </button>
+
+                    <button type="button" id="nav-brand-home" class="nav-brand" aria-label="Go to Feed">
+                        <div class="nav-logo" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 3 3 6 3s6-1 6-3v-5"/>
+                            </svg>
+                        </div>
+                        <div class="nav-brand-text">
+                            <span class="nav-brand-name">Omnicampus</span>
+                            <span class="nav-brand-sub">MITS GWALIOR</span>
+                        </div>
+                    </button>
+                </div>
+
+                <div class="nav-search">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input type="search" id="global-search" placeholder="Search doubts, topics, authors..." aria-label="Search posts">
+                    <button type="button" id="search-clear" class="search-clear hidden" aria-label="Clear search">&times;</button>
+                </div>
+
+                <nav class="nav-tabs" aria-label="Main navigation">
+                    <button type="button" class="nav-tab active" data-tab="feed">Feed</button>
+                    <button type="button" class="nav-tab" data-tab="leaderboard">Leaderboard</button>
+                    <button type="button" class="nav-tab" id="tab-credits" data-tab="credits">My Credits</button>
+                    <button type="button" class="nav-tab hidden" id="tab-approvals" data-tab="approvals">
+                        <span>Pending Credit Approval</span>
+                        <span id="nav-pending-badge" class="tab-badge hidden">0</span>
+                    </button>
+                    <button type="button" class="nav-tab hidden" id="tab-whitelist" data-tab="whitelist">
+                        <span>Faculty Whitelist</span>
+                        <span id="nav-whitelist-badge" class="tab-badge hidden">0</span>
+                    </button>
+                </nav>
+
+                <div class="nav-user">
+                    <div class="user-pill">
+                        <div class="avatar" id="nav-avatar" aria-hidden="true">AM</div>
+                        <div class="user-pill-info">
+                            <span class="user-pill-name" id="nav-user-name">Arnav Meena</span>
+                            <span class="user-pill-meta">
+                                <span id="nav-user-batch">Batch '26</span>
+                                <span id="nav-meta-sep" aria-hidden="true">•</span>
+                                <span class="pts-accent" id="nav-user-pts">0 pts</span>
+                            </span>
+                        </div>
+                    </div>
+                    <button type="button" id="btn-logout" class="logout-btn" aria-label="Sign out">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        <span class="logout-label">Logout</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-wrap">
+            <!-- feed view -->
+            <section id="view-feed" class="tab-view" aria-label="Campus Q&A Feed">
+                <h1 class="sr-only">Omnicampus Campus Feed</h1>
+                <div class="feed-grid">
+                    <div class="feed-col">
+                        <div id="composer-bar" class="card composer-bar" role="button" tabindex="0" aria-label="Create a new post">
+                            <div class="avatar" id="composer-avatar" aria-hidden="true">AM</div>
+                            <div class="composer-placeholder">Post a problem, doubt, or campus question...</div>
+                            <span class="btn btn-primary btn-sm">+ New Post</span>
+                        </div>
+
+                        <div class="filter-bar" id="filter-bar" role="group" aria-label="Filter posts">
+                            <button type="button" class="filter-pill active" data-filter="All">All</button>
+                            <button type="button" class="filter-pill" data-filter="Academics">Academics</button>
+                            <button type="button" class="filter-pill" data-filter="Hostels">Hostels</button>
+                            <button type="button" class="filter-pill" data-filter="Placements">Placements</button>
+                            <button type="button" class="filter-pill" data-filter="Events">Events</button>
+                            <button type="button" class="filter-pill" data-filter="Campus Life">Campus Life</button>
+                            <button type="button" class="filter-pill" data-filter="Unsolved">Unsolved</button>
+                            <button type="button" class="filter-pill" data-filter="Solved">✓ Solved</button>
+                        </div>
+
+                        <div id="posts-container" class="posts-list"></div>
+
+                        <div id="load-more-wrap" class="load-more-wrap hidden">
+                            <button type="button" id="btn-load-more" class="btn btn-secondary">Load more posts</button>
+                        </div>
+                    </div>
+
+                    <!-- right sidebar -->
+                    <aside class="sidebar" aria-label="Account summary and guidelines">
+                        <div id="student-sidebar">
+                            <div class="card card-pad" style="margin-bottom: 16px;">
+                                <div class="sidebar-title">
+                                    <span>Your Credit Progress</span>
+                                    <span class="badge badge-accent">STUDENT</span>
+                                </div>
+                                <div class="mini-stats">
+                                    <div class="mini-stat">
+                                        <div class="mini-stat-label">Total Points</div>
+                                        <div class="mini-stat-val accent" id="side-pts">0</div>
+                                    </div>
+                                    <div class="mini-stat">
+                                        <div class="mini-stat-label">Official Credits</div>
+                                        <div class="mini-stat-val" id="side-credits">0</div>
+                                    </div>
+                                </div>
+                                <div class="prog-head">
+                                    <span>Next Official Credit</span>
+                                    <span id="side-prog-text">0 / 25 pts</span>
+                                </div>
+                                <div class="prog-track">
+                                    <div class="prog-fill" id="side-prog-bar" style="width: 0%;"></div>
+                                </div>
+                                <p style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 10px; line-height: 1.45;">
+                                    Each approved solution earns <strong style="color: var(--accent-text);">+1 point</strong>. Once faculty validate <strong style="color: var(--text-primary);">25 answers</strong>, you unlock <strong style="color: var(--text-primary);">1 official credit</strong>.
+                                </p>
+                            </div>
+
+                            <div class="card card-pad">
+                                <div class="sidebar-title"><span>Campus Guidelines</span></div>
+                                <ul class="rules-list">
+                                    <li><span class="rules-num">01</span><span>Keep doubts clear — attach notes, diagrams, or code screenshots.</span></li>
+                                    <li><span class="rules-num">02</span><span>Only the Original Poster or Faculty can approve a solution (+1 pt).</span></li>
+                                    <li><span class="rules-num">03</span><span>Self-approval is blocked to keep credit scoring fair.</span></li>
+                                    <li><span class="rules-num">04</span><span>Faculty review every approved answer before granting official credits.</span></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- swapped in when logged in as faculty or super admin -->
+                        <div id="faculty-sidebar" class="hidden">
+                            <div class="card card-pad" style="margin-bottom: 16px;">
+                                <div class="sidebar-title">
+                                    <span>Faculty Audit Summary</span>
+                                    <span class="badge badge-warn" id="fac-side-role-badge">FACULTY</span>
+                                </div>
+                                <div class="mini-stats">
+                                    <div class="mini-stat">
+                                        <div class="mini-stat-label">Pending Answers</div>
+                                        <div class="mini-stat-val warn" id="fac-side-pending">0</div>
+                                    </div>
+                                    <div class="mini-stat">
+                                        <div class="mini-stat-label">Validated</div>
+                                        <div class="mini-stat-val accent" id="fac-side-valid">0</div>
+                                    </div>
+                                    <div class="mini-stat">
+                                        <div class="mini-stat-label">Ready (25+ Valid)</div>
+                                        <div class="mini-stat-val accent" id="fac-side-ready">0</div>
+                                    </div>
+                                    <div class="mini-stat">
+                                        <div class="mini-stat-label">Credits Granted</div>
+                                        <div class="mini-stat-val" id="fac-side-granted">0</div>
+                                    </div>
+                                </div>
+                                <button type="button" id="btn-open-approvals" class="btn btn-primary btn-full">
+                                    Open Pending Credit Approval →
+                                </button>
+                                <button type="button" id="btn-open-whitelist" class="btn btn-secondary btn-full hidden" style="margin-top: 8px;">
+                                    Manage Faculty Whitelist →
+                                </button>
+                            </div>
+
+                            <div class="card card-pad">
+                                <div class="sidebar-title"><span>Faculty Moderation Guide</span></div>
+                                <ul class="rules-list">
+                                    <li><span class="rules-num">01</span><span>Deleting any post automatically rolls back active points earned on it.</span></li>
+                                    <li><span class="rules-num">02</span><span>Audit student answers in <strong>Pending Credit Approval</strong> — mark Valid or Revoke (-1 pt).</span></li>
+                                    <li><span class="rules-num">03</span><span>Grant 1 official credit once a student hits 25 validated answers.</span></li>
+                                    <li><span class="rules-num">04</span><span>Remove or restore students anytime from the <strong>Leaderboard</strong>.</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </section>
+
+            <!-- leaderboard view -->
+            <section id="view-leaderboard" class="tab-view hidden" aria-label="Leaderboard">
+                <div class="sec-head">
+                    <div>
+                        <h1 class="sec-title">MITS Mentorship Leaderboard</h1>
+                        <p class="sec-sub">Live rankings of active MITS Gwalior student mentors</p>
+                    </div>
+                    <span class="badge badge-accent" style="padding: 6px 12px; font-size: 0.78rem;">25 Validated Points = 1 Official Credit</span>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Rank</th>
+                                <th scope="col">Student</th>
+                                <th scope="col">Batch</th>
+                                <th scope="col" class="text-right">Total Points</th>
+                                <th scope="col" class="text-right">Official Credits</th>
+                                <th scope="col" class="text-right hidden" id="lb-action-th">Moderation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lb-tbody"></tbody>
+                    </table>
+                </div>
+
+                <!-- faculty-only removed students drawer -->
+                <div id="faculty-removed-sec" class="removed-sec hidden">
+                    <button type="button" id="btn-toggle-removed" class="removed-bar" aria-expanded="false">
+                        <span style="display: inline-flex; align-items: center; gap: 8px;">
+                            <span>🚫 Removed from Leaderboard</span>
+                            <span id="removed-count" class="badge badge-danger">0</span>
+                        </span>
+                        <span id="removed-chevron" aria-hidden="true">▾</span>
+                    </button>
+                    <div id="removed-wrap" class="table-wrap hidden" style="margin-top: 10px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Student</th>
+                                    <th scope="col">Batch</th>
+                                    <th scope="col" class="text-right">Points</th>
+                                    <th scope="col" class="text-right">Official Credits</th>
+                                    <th scope="col" class="text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="removed-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- student credits view -->
+            <section id="view-credits" class="tab-view hidden" aria-label="My Academic Credits">
+                <div class="sec-head">
+                    <div>
+                        <h1 class="sec-title">My Academic Credits</h1>
+                        <p class="sec-sub">Track your points, faculty audit status on every answer, and verified credits</p>
+                    </div>
+                </div>
+
+                <div class="stats-3">
+                    <div class="stat-card stat-card-hi">
+                        <span class="stat-label">Total Points</span>
+                        <span class="stat-num accent" id="cred-pts">0</span>
+                        <span class="stat-sub">Active points from approved solutions</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Faculty Validated</span>
+                        <span class="stat-num" id="cred-valid">0 / 25</span>
+                        <span class="stat-sub">Unconsumed answers toward next credit</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Official Verified Credits</span>
+                        <span class="stat-num warn" id="cred-verified">0</span>
+                        <span class="stat-sub">Officially granted by MITS Faculty</span>
+                    </div>
+                </div>
+
+                <div class="card card-pad" style="margin-bottom: 24px;">
+                    <div class="prog-head" style="font-size: 0.88rem;">
+                        <span>Faculty-Validated Progress Toward Next Credit</span>
+                        <span id="cred-prog-label">0 / 25 Validated</span>
+                    </div>
+                    <div class="prog-track" style="height: 12px;">
+                        <div class="prog-fill" id="cred-prog-bar" style="width: 0%;"></div>
+                    </div>
+                    <p id="cred-remaining" style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 9px;"></p>
+                </div>
+
+                <div class="credits-cols">
+                    <div>
+                        <div class="sec-head" style="margin-bottom: 12px;">
+                            <h2 style="font-size: 1.05rem; font-weight: 800;">My Point-Earning Answers</h2>
+                            <span class="badge badge-accent" id="history-count">0 Entries</span>
+                        </div>
+                        <div id="approved-history" class="history-list"></div>
+                    </div>
+
+                    <div>
+                        <div class="sec-head" style="margin-bottom: 12px;">
+                            <h2 style="font-size: 1.05rem; font-weight: 800;">My Posted Questions</h2>
+                            <span class="badge badge-pill" id="my-posts-count">0 Posts</span>
+                        </div>
+                        <div id="my-posts-list" class="history-list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- faculty pending credit approval view -->
+            <section id="view-approvals" class="tab-view hidden" aria-label="Pending Credit Approval">
+                <div class="sec-head">
+                    <div>
+                        <h1 class="sec-title">Pending Credit Approval</h1>
+                        <p class="sec-sub">Inspect student answers, mark legit ones Valid or Revoke (-1 pt), and grant credits at 25 validated answers</p>
+                    </div>
+                    <span class="badge badge-warn" style="padding: 6px 12px; font-size: 0.78rem;">🏛️ Faculty Audit</span>
+                </div>
+
+                <div class="stats-4">
+                    <div class="stat-card">
+                        <span class="stat-label">Pending Answers</span>
+                        <span class="stat-num warn" id="app-pending">0</span>
+                        <span class="stat-sub">Waiting for review</span>
+                    </div>
+                    <div class="stat-card stat-card-hi">
+                        <span class="stat-label">Validated Answers</span>
+                        <span class="stat-num accent" id="app-valid">0</span>
+                        <span class="stat-sub">Locked in toward credit</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Ready for Credit</span>
+                        <span class="stat-num accent" id="app-ready">0</span>
+                        <span class="stat-sub">Students at 25+ valid</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Credits Granted</span>
+                        <span class="stat-num" id="app-granted">0</span>
+                        <span class="stat-sub">Total verified across MITS</span>
+                    </div>
+                </div>
+
+                <div class="filter-bar" id="audit-filter-bar" role="group" aria-label="Filter student audit queue">
+                    <button type="button" class="filter-pill active" data-audit-filter="all">All Students with Answers</button>
+                    <button type="button" class="filter-pill" data-audit-filter="pending">Needs Audit (Pending)</button>
+                    <button type="button" class="filter-pill" data-audit-filter="ready">Ready for Credit (25+ Valid)</button>
+                </div>
+
+                <div id="audit-container" class="audit-list"></div>
+            </section>
+
+            <!-- super admin faculty whitelist view -->
+            <section id="view-whitelist" class="tab-view hidden" aria-label="Faculty Whitelist">
+                <div class="sec-head">
+                    <div>
+                        <h1 class="sec-title">Faculty Whitelist Manager</h1>
+                        <p class="sec-sub">Add or remove professor emails live — no code edits or Netlify redeploy needed</p>
+                    </div>
+                    <span class="badge badge-warn" style="padding: 6px 12px; font-size: 0.78rem;">👑 Super Admin Control</span>
+                </div>
+
+                <div class="stats-3">
+                    <div class="stat-card stat-card-hi">
+                        <span class="stat-label">Whitelisted Emails</span>
+                        <span class="stat-num accent" id="wl-total">0</span>
+                        <span class="stat-sub">Approved to create faculty accounts</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Registered Faculty</span>
+                        <span class="stat-num" id="wl-registered">0</span>
+                        <span class="stat-sub">Already signed up on Omnicampus</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Awaiting Sign Up</span>
+                        <span class="stat-num warn" id="wl-pending">0</span>
+                        <span class="stat-sub">Whitelisted but not registered yet</span>
+                    </div>
+                </div>
+
+                <div class="card card-pad" style="margin-bottom: 18px;">
+                    <div class="sidebar-title" style="margin-bottom: 12px;">
+                        <span>Whitelist a New Professor</span>
+                        <span style="font-size: 0.74rem; color: var(--text-muted); text-transform: none; font-weight: 500;">Takes effect immediately</span>
+                    </div>
+                    <form id="wl-form" class="whitelist-grid">
+                        <div>
+                            <label class="form-label" for="wl-email">Professor Email *</label>
+                            <input type="email" id="wl-email" class="form-input" placeholder="prof.sharma@mitsgwl.ac.in" required>
+                        </div>
+                        <div>
+                            <label class="form-label" for="wl-name">Professor Name (Optional)</label>
+                            <input type="text" id="wl-name" class="form-input" placeholder="Dr. R. K. Sharma">
+                        </div>
+                        <div>
+                            <label class="form-label" for="wl-dept">Department (Optional)</label>
+                            <input type="text" id="wl-dept" class="form-input" placeholder="CSE / IT / ECE">
+                        </div>
+                        <button type="submit" id="wl-submit" class="btn btn-primary" style="height: 42px;">+ Add Faculty</button>
+                    </form>
+                </div>
+
+                <div class="sec-head" style="margin-bottom: 12px;">
+                    <h2 style="font-size: 1.05rem; font-weight: 800;">Approved Faculty Directory</h2>
+                    <input type="search" id="wl-search" class="form-input" style="max-width: 280px; padding: 7px 12px; font-size: 0.83rem;" placeholder="Filter whitelisted emails..." aria-label="Filter whitelisted faculty">
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Faculty Email</th>
+                                <th scope="col">Name &amp; Dept</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Added</th>
+                                <th scope="col" class="text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="wl-tbody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- create post modal -->
+    <div id="post-modal" class="modal-bg hidden" role="dialog" aria-modal="true" aria-labelledby="post-modal-title">
+        <div class="modal-box">
+            <div class="modal-head">
+                <h2 id="post-modal-title">Ask the MITS Community</h2>
+                <button type="button" id="post-modal-x" class="modal-x" aria-label="Close post composer">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="post-form">
+                    <div class="composer-row">
+                        <input type="text" id="post-title" class="form-input" placeholder="Clear title (e.g., C pointers doubt in Unit 3)" maxlength="160" aria-label="Post title" required>
+                        <select id="post-category" class="form-select" aria-label="Category">
+                            <option value="Academics">Academics</option>
+                            <option value="Hostels">Hostels</option>
+                            <option value="Placements">Placements</option>
+                            <option value="Events">Events</option>
+                            <option value="Campus Life">Campus Life</option>
+                        </select>
+                    </div>
+
+                    <textarea id="post-body" class="form-textarea" rows="5" placeholder="Explain your doubt clearly. Add code, subject details, or context so seniors can help fast..." aria-label="Post details" required></textarea>
+
+                    <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Attach an image">
+                        <input type="file" id="post-image" accept="image/*" class="hidden">
+                        <div class="dropzone-label">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                            </svg>
+                            <span><strong>Click to attach</strong> or drag &amp; drop an image (auto-compressed &lt; 150KB)</span>
+                        </div>
+                    </div>
+
+                    <div id="img-preview-box" class="img-preview hidden">
+                        <img id="img-preview-el" src="" alt="Compressed image preview">
+                        <span id="img-preview-meta" class="img-preview-meta">Compressed</span>
+                        <button type="button" id="img-rm-btn" class="img-rm-btn">Remove</button>
+                    </div>
+
+                    <div class="modal-foot">
+                        <button type="button" id="post-cancel" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" id="post-submit" class="btn btn-primary">Publish Post</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- image lightbox -->
+    <div id="lightbox" class="modal-bg hidden" role="dialog" aria-modal="true" aria-label="Full image view">
+        <button type="button" id="lightbox-x" class="lightbox-x" aria-label="Close image view">&times;</button>
+        <div class="lightbox-inner">
+            <img id="lightbox-img" src="" alt="Post attachment">
+            <span id="lightbox-cap" style="font-size: 0.85rem; color: #F3F4F6; text-align: center;"></span>
+        </div>
+    </div>
+
+    <!-- custom confirm box (no browser alert/confirm) -->
+    <div id="confirm-modal" class="modal-bg hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+        <div class="confirm-box">
+            <h2 id="confirm-title">Confirm Action</h2>
+            <p id="confirm-msg">Are you sure?</p>
+            <div id="confirm-warn" class="confirm-warn hidden"></div>
+            <div class="modal-foot" style="margin-top: 0;">
+                <button type="button" id="confirm-cancel" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="confirm-ok" class="btn btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- non-module fallback: catches file:// CORS block & global runtime errors -->
+    <script>
+        (function () {
+            function showGlobalError(msg) {
+                var banner = document.getElementById('global-error-banner');
+                var text = document.getElementById('global-error-text');
+                if (banner && text) {
+                    text.textContent = msg;
+                    banner.classList.remove('hidden');
+                }
+            }
+
+            window.addEventListener('error', function (e) {
+                if (e && e.message) showGlobalError('App error: ' + e.message);
+            });
+
+            window.addEventListener('unhandledrejection', function (e) {
+                var reason = e && e.reason ? (e.reason.message || String(e.reason)) : 'Unexpected async error';
+                showGlobalError('Firebase / Network error: ' + reason);
+            });
+
+            document.addEventListener('DOMContentLoaded', function () {
+                var closeBtn = document.getElementById('global-error-close');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function () {
+                        document.getElementById('global-error-banner').classList.add('hidden');
+                    });
+                }
+
+                if (location.protocol === 'file:') {
+                    var warn = document.getElementById('file-warning');
+                    if (warn) warn.classList.remove('hidden');
+                } else {
+                    var pill = document.getElementById('session-checking');
+                    if (pill) pill.classList.remove('hidden');
+                    setTimeout(function () {
+                        if (pill) pill.classList.add('hidden');
+                    }, 3500);
+                }
+            });
+        })();
+    </script>
+
+    <script type="module">
+        const SUPER_ADMIN_EMAIL = "arnavaashu7@gmail.com";
+
+        // validates MITS Gwalior roll email patterns (e.g. 26tc1ar22@mitsgwl.ac.in or 0901cs261001@mitsgwl.ac.in)
+        const STUDENT_EMAIL_REGEX = /^(\d{2}[a-z]{2,4}\d[a-z]{2}\d{2,3}|\d{4}[a-z]{2,4}\d{6})@mitsgwl\.ac\.in$/i;
+
+        const CURR_YEAR = 26;
+        const PTS_PER_CREDIT = 25;
+        const PAGE_SIZE = 35;
+        const MAX_IMG_BYTES = 150 * 1024;
+        const THEME_KEY = "omnicampus_theme";
+
+        // only import app, auth, firestore (skip analytics to keep load fast)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+        import {
+            getAuth,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged,
+            sendEmailVerification,
+            sendPasswordResetEmail,
+            updateProfile,
+            reload
+        } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+        import {
+            getFirestore,
+            collection,
+            doc,
+            setDoc,
+            getDoc,
+            addDoc,
+            updateDoc,
+            deleteDoc,
+            onSnapshot,
+            query,
+            orderBy,
+            limit,
+            increment,
+            arrayUnion,
+            arrayRemove,
+            runTransaction,
+            writeBatch
+        } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAdaCffrAeqT8xYWspp7NgGLRG4JXfyMN8",
+            authDomain: "omni-campus-2baa5.firebaseapp.com",
+            projectId: "omni-campus-2baa5",
+            storageBucket: "omni-campus-2baa5.firebasestorage.app",
+            messagingSenderId: "105475062880",
+            appId: "1:105475062880:web:b356db81c19674ef38d705"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const state = {
+            theme: document.documentElement.dataset.theme || 'dark',
+            authMode: 'login',
+            role: 'student',
+            user: null,
+            users: [],
+            whitelist: [],
+            posts: [],
+            postLimit: PAGE_SIZE,
+            hasMorePosts: false,
+            pointEntries: [],
+            tab: 'feed',
+            filter: 'All',
+            auditFilter: 'all',
+            wlSearch: '',
+            search: '',
+            pendingImg: null,
+            expandedPosts: new Set(),
+            collapsedAudits: new Set(),
+            drafts: new Map(),
+            removedOpen: false,
+            resendTimer: null,
+            resendLeft: 0,
+            unsubs: { self: null, users: null, posts: null, entries: null, whitelist: null }
+        };
+
+        const $ = (id) => document.getElementById(id);
+
+        const el = {
+            toasts: $('toast-container'),
+            sessionChecking: $('session-checking'),
+            gateThemeBtn: $('gate-theme-btn'),
+            navThemeBtn: $('nav-theme-btn'),
+
+            authView: $('authView'),
+            verifyView: $('verifyView'),
+            appView: $('appView'),
+
+            modeLogin: $('btn-mode-login'),
+            modeReg: $('btn-mode-register'),
+            roleStu: $('role-student'),
+            roleFac: $('role-faculty'),
+            nameGroup: $('name-group'),
+            authForm: $('auth-form'),
+            authErr: $('auth-error'),
+            authName: $('auth-name'),
+            authEmail: $('auth-email'),
+            authEmailLabel: $('auth-email-label'),
+            authEmailHint: $('auth-email-hint'),
+            batchPrev: $('auth-batch-preview'),
+            authPass: $('auth-password'),
+            forgotBtn: $('btn-forgot-pw'),
+            authSubmit: $('auth-submit'),
+
+            verifyAlert: $('verify-alert'),
+            verifyEmail: $('verify-email-text'),
+            checkVerifiedBtn: $('btn-check-verified'),
+            resendBtn: $('btn-resend-verify'),
+            verifySignoutBtn: $('btn-verify-signout'),
+
+            brandHome: $('nav-brand-home'),
+            searchInput: $('global-search'),
+            searchClear: $('search-clear'),
+            navTabs: document.querySelectorAll('.nav-tab'),
+            tabCredits: $('tab-credits'),
+            tabApprovals: $('tab-approvals'),
+            tabWhitelist: $('tab-whitelist'),
+            pendingBadge: $('nav-pending-badge'),
+            whitelistBadge: $('nav-whitelist-badge'),
+            navAvatar: $('nav-avatar'),
+            navName: $('nav-user-name'),
+            navBatch: $('nav-user-batch'),
+            navSep: $('nav-meta-sep'),
+            navPts: $('nav-user-pts'),
+            logoutBtn: $('btn-logout'),
+
+            views: {
+                feed: $('view-feed'),
+                leaderboard: $('view-leaderboard'),
+                credits: $('view-credits'),
+                approvals: $('view-approvals'),
+                whitelist: $('view-whitelist')
+            },
+
+            composerBar: $('composer-bar'),
+            composerAvatar: $('composer-avatar'),
+            postModal: $('post-modal'),
+            postModalX: $('post-modal-x'),
+            postCancel: $('post-cancel'),
+            postForm: $('post-form'),
+            postTitle: $('post-title'),
+            postCat: $('post-category'),
+            postBody: $('post-body'),
+            dropzone: $('dropzone'),
+            postImgInput: $('post-image'),
+            imgPrevBox: $('img-preview-box'),
+            imgPrevEl: $('img-preview-el'),
+            imgPrevMeta: $('img-preview-meta'),
+            imgRmBtn: $('img-rm-btn'),
+            postSubmit: $('post-submit'),
+            filterBar: $('filter-bar'),
+            postsBox: $('posts-container'),
+            loadMoreWrap: $('load-more-wrap'),
+            loadMoreBtn: $('btn-load-more'),
+
+            stuSide: $('student-sidebar'),
+            facSide: $('faculty-sidebar'),
+            facSideRoleBadge: $('fac-side-role-badge'),
+            sidePts: $('side-pts'),
+            sideCredits: $('side-credits'),
+            sideProgText: $('side-prog-text'),
+            sideProgBar: $('side-prog-bar'),
+            facSidePending: $('fac-side-pending'),
+            facSideValid: $('fac-side-valid'),
+            facSideReady: $('fac-side-ready'),
+            facSideGranted: $('fac-side-granted'),
+            openApprovalsBtn: $('btn-open-approvals'),
+            openWhitelistBtn: $('btn-open-whitelist'),
+
+            lbActionTh: $('lb-action-th'),
+            lbTbody: $('lb-tbody'),
+            removedSec: $('faculty-removed-sec'),
+            toggleRemovedBtn: $('btn-toggle-removed'),
+            removedCount: $('removed-count'),
+            removedChevron: $('removed-chevron'),
+            removedWrap: $('removed-wrap'),
+            removedTbody: $('removed-tbody'),
+
+            credPts: $('cred-pts'),
+            credValid: $('cred-valid'),
+            credVerified: $('cred-verified'),
+            credProgLabel: $('cred-prog-label'),
+            credProgBar: $('cred-prog-bar'),
+            credRemaining: $('cred-remaining'),
+            historyCount: $('history-count'),
+            approvedHistory: $('approved-history'),
+            myPostsCount: $('my-posts-count'),
+            myPostsList: $('my-posts-list'),
+
+            appPending: $('app-pending'),
+            appValid: $('app-valid'),
+            appReady: $('app-ready'),
+            appGranted: $('app-granted'),
+            auditFilterBar: $('audit-filter-bar'),
+            auditBox: $('audit-container'),
+
+            wlForm: $('wl-form'),
+            wlEmail: $('wl-email'),
+            wlName: $('wl-name'),
+            wlDept: $('wl-dept'),
+            wlSubmit: $('wl-submit'),
+            wlSearch: $('wl-search'),
+            wlTotal: $('wl-total'),
+            wlRegistered: $('wl-registered'),
+            wlPending: $('wl-pending'),
+            wlTbody: $('wl-tbody'),
+
+            lightbox: $('lightbox'),
+            lightboxImg: $('lightbox-img'),
+            lightboxCap: $('lightbox-cap'),
+            lightboxX: $('lightbox-x'),
+
+            confirmModal: $('confirm-modal'),
+            confirmTitle: $('confirm-title'),
+            confirmMsg: $('confirm-msg'),
+            confirmWarn: $('confirm-warn'),
+            confirmCancel: $('confirm-cancel'),
+            confirmOk: $('confirm-ok')
+        };
+
+        // theme toggle
+        function applyTheme(next) {
+            const mode = next === 'light' ? 'light' : 'dark';
+            state.theme = mode;
+            document.documentElement.dataset.theme = mode;
+            const metaTheme = document.querySelector('meta[name="theme-color"]');
+            if (metaTheme) metaTheme.content = mode === 'light' ? '#DFCEB6' : '#0E1113';
+            try { localStorage.setItem(THEME_KEY, mode); } catch (e) {}
+
+            [el.gateThemeBtn, el.navThemeBtn].forEach((btn) => {
+                btn.querySelector('.theme-emoji').textContent = mode === 'dark' ? '☀️' : '🌙';
+                btn.querySelector('.theme-label').textContent = mode === 'dark' ? 'Light' : 'Dark';
+                btn.title = mode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+            });
+        }
+
+        const toggleTheme = () => applyTheme(state.theme === 'dark' ? 'light' : 'dark');
+        el.gateThemeBtn.addEventListener('click', toggleTheme);
+        el.navThemeBtn.addEventListener('click', toggleTheme);
+        applyTheme(state.theme);
+
+        // small helper utils
+        function esc(s) {
+            if (typeof s !== 'string') return '';
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function nameOf(u) {
+            if (!u) return 'Member';
+            return u.displayName || u.name || (u.email ? u.email.split('@')[0] : 'Member');
+        }
+
+        function initialsOf(name) {
+            if (!name) return '?';
+            const p = name.trim().split(/\s+/);
+            return (p[0][0] + (p[1] ? p[1][0] : '')).toUpperCase();
+        }
+
+        const isSuperAdminEmail = (email) => (email || '').trim().toLowerCase() === SUPER_ADMIN_EMAIL;
+        const isSuperAdmin = (u) => Boolean(u && (u.role === 'super_admin' || isSuperAdminEmail(u.email)));
+        const isStaffRole = (role) => role === 'faculty' || role === 'super_admin';
+
+        function getBatchYear(email) {
+            const e = (email || '').trim();
+            if (!STUDENT_EMAIL_REGEX.test(e)) return null;
+            const mLong = e.match(/^\d{4}[a-z]{2,4}(\d{2})\d{4}@mitsgwl\.ac\.in$/i);
+            if (mLong) return mLong[1];
+            const mShort = e.match(/^(\d{2})[a-z]{2,4}\d[a-z]{2}\d{2,3}@mitsgwl\.ac\.in$/i);
+            return mShort ? mShort[1] : null;
+        }
+
+        const isStudentEmail = (email) => getBatchYear(email) !== null;
+
+        function batchLabelFromEmail(email) {
+            const yr = getBatchYear(email);
+            if (!yr) return 'MITS Student';
+            const studyYr = CURR_YEAR - parseInt(yr, 10) + 1;
+            if (studyYr === 1) return `Batch '${yr} • 1st Year`;
+            if (studyYr === 2) return `Batch '${yr} • 2nd Year`;
+            if (studyYr === 3) return `Batch '${yr} • 3rd Year`;
+            if (studyYr === 4) return `Batch '${yr} • 4th Year`;
+            if (studyYr > 4 && studyYr <= 10) return `Batch '${yr} • Alumni`;
+            return `Batch '${yr} • MITS`;
+        }
+
+        function getTimeMs(val) {
+            if (!val) return 0;
+            if (typeof val === 'number') return val;
+            if (typeof val.toMillis === 'function') return val.toMillis();
+            if (val.createdAt && typeof val.createdAt.toMillis === 'function') return val.createdAt.toMillis();
+            if (typeof val.createdAt === 'number') return val.createdAt;
+            if (typeof val.approvedAt === 'number') return val.approvedAt;
+            return 0;
+        }
+
+        function timeAgo(val) {
+            const ms = getTimeMs(val);
+            if (!ms) return 'Just now';
+            const sec = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+            if (sec < 45) return 'Just now';
+            const min = Math.floor(sec / 60);
+            if (min < 60) return `${min}m ago`;
+            const hr = Math.floor(min / 60);
+            if (hr < 24) return `${hr}h ago`;
+            const day = Math.floor(hr / 24);
+            if (day < 30) return `${day}d ago`;
+            return new Date(ms).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        function toast(msg, type = 'success') {
+            const node = document.createElement('div');
+            node.className = `toast toast-${type}`;
+            const sym = type === 'success' ? '✓' : type === 'error' ? '✕' : '!';
+            node.innerHTML = `<span class="toast-icon" aria-hidden="true">${sym}</span><span>${esc(msg)}</span>`;
+            el.toasts.appendChild(node);
+            setTimeout(() => {
+                node.style.opacity = '0';
+                node.style.transform = 'translateX(18px)';
+                node.style.transition = 'opacity 0.2s, transform 0.2s';
+                setTimeout(() => node.remove(), 220);
+            }, 3600);
+        }
+
+        function errText(err) {
+            const c = err?.code || '';
+            if (location.protocol === 'file:') return 'Firebase Auth needs HTTP/HTTPS. Use Live Server or Netlify.';
+            if (c === 'auth/invalid-credential' || c === 'auth/wrong-password' || c === 'auth/user-not-found') return 'Wrong email or password.';
+            if (c === 'auth/email-already-in-use') return 'Account already exists. Switch to Sign In.';
+            if (c === 'auth/weak-password') return 'Password needs at least 6 characters.';
+            if (c === 'auth/invalid-email') return 'Enter a valid email address.';
+            if (c === 'auth/too-many-requests') return 'Too many tries. Wait a minute and try again.';
+            if (c === 'auth/network-request-failed') return 'Network issue. Check your connection.';
+            if (c === 'permission-denied') return 'Firestore permission denied. Check your database rules.';
+            return err?.message || 'Something went wrong. Try again.';
+        }
+
+        // keep student points >= 0 using a transaction
+        async function updateStudentPts(uid, delta) {
+            if (!uid || !delta) return;
+            const ref = doc(db, 'users', uid);
+            await runTransaction(db, async (tx) => {
+                const snap = await tx.get(ref);
+                if (!snap.exists()) return;
+                const next = Math.max(0, Number(snap.data().points || 0) + delta);
+                tx.update(ref, { points: next });
+            });
+        }
+
+        // custom confirm dialog
+        let confirmResolve = null;
+        function confirmAction({ title, message, warning = '', okLabel = 'Confirm', okVariant = 'danger' }) {
+            el.confirmTitle.textContent = title;
+            el.confirmMsg.textContent = message;
+            if (warning) {
+                el.confirmWarn.textContent = warning;
+                el.confirmWarn.classList.remove('hidden');
+            } else {
+                el.confirmWarn.classList.add('hidden');
+            }
+            el.confirmOk.textContent = okLabel;
+            el.confirmOk.className = okVariant === 'primary' ? 'btn btn-primary' : 'btn btn-danger';
+            el.confirmModal.classList.remove('hidden');
+            return new Promise((res) => { confirmResolve = res; });
+        }
+
+        function closeConfirm(val) {
+            el.confirmModal.classList.add('hidden');
+            if (confirmResolve) {
+                confirmResolve(val);
+                confirmResolve = null;
+            }
+        }
+
+        el.confirmCancel.addEventListener('click', () => closeConfirm(false));
+        el.confirmOk.addEventListener('click', () => closeConfirm(true));
+        el.confirmModal.addEventListener('click', (e) => { if (e.target === el.confirmModal) closeConfirm(false); });
+
+        // lightbox
+        function openLightbox(src, cap = '') {
+            el.lightboxImg.src = src;
+            el.lightboxCap.textContent = cap;
+            el.lightbox.classList.remove('hidden');
+        }
+        function closeLightbox() {
+            el.lightbox.classList.add('hidden');
+            el.lightboxImg.src = '';
+        }
+        el.lightboxX.addEventListener('click', closeLightbox);
+        el.lightbox.addEventListener('click', (e) => { if (e.target === el.lightbox) closeLightbox(); });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (!el.lightbox.classList.contains('hidden')) closeLightbox();
+            if (!el.postModal.classList.contains('hidden')) closePostModal();
+            if (!el.confirmModal.classList.contains('hidden')) closeConfirm(false);
+        });
+
+        // shrink uploaded pic so firestore stays fast (webp first, fallback to jpeg)
+        function compressPic(file) {
+            return new Promise((resolve, reject) => {
+                if (!file || !file.type.startsWith('image/')) {
+                    reject(new Error('Pick a valid image file.'));
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error('Failed to read image.'));
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onerror = () => reject(new Error('Could not load that image.'));
+                    img.onload = () => {
+                        const maxSide = 800;
+                        const scale = Math.min(1, maxSide / img.width, maxSide / img.height);
+                        const baseW = Math.max(1, Math.round(img.width * scale));
+                        const baseH = Math.max(1, Math.round(img.height * scale));
+
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+
+                        canvas.width = 2;
+                        canvas.height = 2;
+                        const supportsWebp = canvas.toDataURL('image/webp', 0.72).startsWith('data:image/webp');
+                        const mime = supportsWebp ? 'image/webp' : 'image/jpeg';
+                        const extLabel = supportsWebp ? 'WebP' : 'JPEG';
+
+                        let q = 0.72;
+                        let shrink = 1;
+                        let out = '';
+                        let bytes = Infinity;
+
+                        for (let i = 0; i < 6; i++) {
+                            canvas.width = Math.max(1, Math.round(baseW * shrink));
+                            canvas.height = Math.max(1, Math.round(baseH * shrink));
+                            ctx.fillStyle = '#0E1113';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                            out = canvas.toDataURL(mime, q);
+                            const comma = out.indexOf(',');
+                            bytes = Math.round((out.length - comma - 1) * 0.75);
+                            if (bytes <= MAX_IMG_BYTES) break;
+                            if (q > 0.45) q -= 0.1;
+                            else shrink *= 0.82;
+                        }
+
+                        if (bytes > MAX_IMG_BYTES) {
+                            reject(new Error('Image is still over 150KB after compression. Try a smaller pic.'));
+                            return;
+                        }
+
+                        resolve({
+                            dataUrl: out,
+                            kb: Math.max(1, Math.round(bytes / 1024)),
+                            w: canvas.width,
+                            h: canvas.height,
+                            format: extLabel
+                        });
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // auth gate ui
+        function showAuthError(msg) {
+            if (!msg) {
+                el.authErr.classList.add('hidden');
+                el.authErr.textContent = '';
+            } else {
+                el.authErr.textContent = msg;
+                el.authErr.classList.remove('hidden');
+            }
+        }
+
+        function syncAuthForm() {
+            showAuthError('');
+            const reg = state.authMode === 'register';
+            const stu = state.role === 'student';
+
+            el.modeLogin.classList.toggle('active', !reg);
+            el.modeReg.classList.toggle('active', reg);
+            el.modeLogin.setAttribute('aria-selected', String(!reg));
+            el.modeReg.setAttribute('aria-selected', String(reg));
+
+            el.roleStu.classList.toggle('active', stu);
+            el.roleFac.classList.toggle('active', !stu);
+
+            el.nameGroup.classList.toggle('hidden', !reg);
+            el.forgotBtn.classList.toggle('hidden', reg);
+
+            el.authName.placeholder = stu ? 'Arnav Meena' : 'Dr. R. K. Sharma';
+            el.authEmailLabel.textContent = stu ? 'MITS Student Email' : 'Whitelisted Faculty Email';
+            el.authEmail.placeholder = stu ? '26tc1ar22@mitsgwl.ac.in' : 'prof.sharma@mitsgwl.ac.in';
+            el.authEmailHint.textContent = reg
+                ? (stu ? 'e.g. 26tc1ar22@mitsgwl.ac.in or 0901cs261001@mitsgwl.ac.in' : 'Must be added by Super Admin in Faculty Whitelist')
+                : (stu ? 'Enter your verified @mitsgwl.ac.in email' : 'Enter your whitelisted faculty email');
+
+            el.authPass.autocomplete = reg ? 'new-password' : 'current-password';
+            el.authSubmit.textContent = reg ? 'Create Account & Send Verification' : 'Sign In to Omnicampus';
+            updateBatchHint();
+        }
+
+        function updateBatchHint() {
+            const v = el.authEmail.value.trim();
+            if (isSuperAdminEmail(v)) el.batchPrev.textContent = '👑 Super Admin';
+            else if (isStudentEmail(v)) el.batchPrev.textContent = batchLabelFromEmail(v);
+            else if (v.includes('@')) el.batchPrev.textContent = '🏛️ Checked against Faculty Whitelist';
+            else el.batchPrev.textContent = '';
+        }
+
+        el.modeLogin.addEventListener('click', () => { state.authMode = 'login'; syncAuthForm(); });
+        el.modeReg.addEventListener('click', () => { state.authMode = 'register'; syncAuthForm(); });
+        el.roleStu.addEventListener('click', () => { state.role = 'student'; syncAuthForm(); });
+        el.roleFac.addEventListener('click', () => { state.role = 'faculty'; syncAuthForm(); });
+        el.authEmail.addEventListener('input', updateBatchHint);
+        syncAuthForm();
+
+        el.forgotBtn.addEventListener('click', async () => {
+            showAuthError('');
+            const email = el.authEmail.value.trim().toLowerCase();
+            if (!email) {
+                showAuthError('Type your email first, then hit Forgot Password.');
+                el.authEmail.focus();
+                return;
+            }
+            if (!email.includes('@')) {
+                showAuthError('Enter a valid email address.');
+                return;
+            }
+            el.forgotBtn.disabled = true;
+            try {
+                await sendPasswordResetEmail(auth, email);
+                toast(`Reset link sent to ${email}. Check inbox & spam.`, 'success');
+            } catch (err) {
+                showAuthError(errText(err));
+            } finally {
+                el.forgotBtn.disabled = false;
+            }
+        });
+
+        el.authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            showAuthError('');
+
+            const email = el.authEmail.value.trim().toLowerCase();
+            const pass = el.authPass.value;
+            const name = el.authName.value.trim();
+            const superMail = isSuperAdminEmail(email);
+
+            if (!email) return showAuthError('Enter your email address.');
+            if (!pass || pass.length < 6) return showAuthError('Password must be at least 6 characters.');
+
+            if (!superMail) {
+                if (state.authMode === 'register') {
+                    if (name.length < 2) return showAuthError('Enter your display name (e.g. Arnav Meena).');
+                    if (state.role === 'student' && !isStudentEmail(email)) {
+                        return showAuthError('Use your MITS roll email like 26tc1ar22@mitsgwl.ac.in or 0901cs261001@mitsgwl.ac.in.');
+                    }
+                } else {
+                    if (state.role === 'student' && !isStudentEmail(email)) {
+                        state.role = 'faculty';
+                        syncAuthForm();
+                    } else if (state.role === 'faculty' && isStudentEmail(email)) {
+                        state.role = 'student';
+                        syncAuthForm();
+                    }
+                }
+            }
+
+            el.authSubmit.disabled = true;
+            const prevTxt = el.authSubmit.textContent;
+            el.authSubmit.innerHTML = `<span class="spinner-sm"></span> ${state.authMode === 'register' ? 'Creating account...' : 'Signing in...'}`;
+
+            try {
+                if (state.authMode === 'register') {
+                    if (superMail) {
+                        const displayName = name || 'Arnav';
+                        const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                        await updateProfile(cred.user, { displayName });
+                        await setDoc(doc(db, 'users', cred.user.uid), {
+                            uid: cred.user.uid,
+                            email,
+                            displayName,
+                            role: 'super_admin',
+                            batchLabel: 'Super Admin • Omnicampus',
+                            points: 0,
+                            verifiedCredits: 0,
+                            removedFromLeaderboard: false,
+                            createdAt: Date.now()
+                        });
+                        el.authForm.reset();
+                        toast('Welcome, Super Admin Arnav!', 'success');
+                        return;
+                    }
+
+                    let finalName = name;
+                    if (state.role === 'faculty') {
+                        const wlSnap = await getDoc(doc(db, 'faculty_whitelist', email));
+                        if (!wlSnap.exists()) {
+                            showAuthError('This email is not in the Faculty Whitelist yet. Ask Super Admin (Arnav) to add it first.');
+                            return;
+                        }
+                        if (!finalName && wlSnap.data()?.name) finalName = wlSnap.data().name;
+                    }
+
+                    const role = state.role;
+                    const batchLabel = role === 'student' ? batchLabelFromEmail(email) : 'Faculty • MITS Gwalior';
+                    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                    await updateProfile(cred.user, { displayName: finalName });
+
+                    await setDoc(doc(db, 'users', cred.user.uid), {
+                        uid: cred.user.uid,
+                        email,
+                        displayName: finalName,
+                        role,
+                        batchLabel,
+                        points: 0,
+                        verifiedCredits: 0,
+                        removedFromLeaderboard: false,
+                        createdAt: Date.now()
+                    });
+
+                    await sendEmailVerification(cred.user);
+                    startCooldown(60);
+                    el.authForm.reset();
+                    toast(`Verification link sent to ${email}!`, 'success');
+                } else {
+                    try {
+                        const cred = await signInWithEmailAndPassword(auth, email, pass);
+                        el.authForm.reset();
+                        if (!cred.user.emailVerified && !superMail) toast('Verify your email first to enter.', 'warning');
+                        else toast(superMail ? 'Welcome back, Super Admin Arnav!' : 'Welcome back!', 'success');
+                    } catch (loginErr) {
+                        // auto-create super admin account on first sign in if not registered yet
+                        if (superMail && (loginErr?.code === 'auth/user-not-found' || loginErr?.code === 'auth/invalid-credential')) {
+                            try {
+                                const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                                await updateProfile(cred.user, { displayName: 'Arnav' });
+                                await setDoc(doc(db, 'users', cred.user.uid), {
+                                    uid: cred.user.uid,
+                                    email,
+                                    displayName: 'Arnav',
+                                    role: 'super_admin',
+                                    batchLabel: 'Super Admin • Omnicampus',
+                                    points: 0,
+                                    verifiedCredits: 0,
+                                    removedFromLeaderboard: false,
+                                    createdAt: Date.now()
+                                });
+                                el.authForm.reset();
+                                toast('Super Admin account initialized — welcome Arnav!', 'success');
+                                return;
+                            } catch (createErr) {
+                                if (createErr?.code === 'auth/email-already-in-use') {
+                                    throw loginErr;
+                                }
+                                throw createErr;
+                            }
+                        }
+                        throw loginErr;
+                    }
+                }
+            } catch (err) {
+                showAuthError(errText(err));
+            } finally {
+                el.authSubmit.disabled = false;
+                el.authSubmit.textContent = prevTxt;
+            }
+        });
+
+        // email verification screen
+        function stopCooldown() {
+            if (state.resendTimer) { clearInterval(state.resendTimer); state.resendTimer = null; }
+            state.resendLeft = 0;
+            el.resendBtn.disabled = false;
+            el.resendBtn.textContent = 'Resend Verification Email';
+        }
+
+        function startCooldown(sec = 60) {
+            stopCooldown();
+            state.resendLeft = sec;
+            el.resendBtn.disabled = true;
+            el.resendBtn.textContent = `Resend Email in ${state.resendLeft}s`;
+            state.resendTimer = setInterval(() => {
+                state.resendLeft -= 1;
+                if (state.resendLeft <= 0) stopCooldown();
+                else el.resendBtn.textContent = `Resend Email in ${state.resendLeft}s`;
+            }, 1000);
+        }
+
+        function openVerifyGate(fbUser) {
+            stopListeners();
+            if (el.sessionChecking) el.sessionChecking.classList.add('hidden');
+            el.authView.classList.add('hidden');
+            el.appView.classList.add('hidden');
+            el.verifyView.classList.remove('hidden');
+            el.gateThemeBtn.classList.remove('hidden');
+            el.verifyEmail.textContent = fbUser.email || '';
+            el.verifyAlert.classList.add('hidden');
+        }
+
+        el.checkVerifiedBtn.addEventListener('click', async () => {
+            if (!auth.currentUser) return;
+            el.checkVerifiedBtn.disabled = true;
+            el.checkVerifiedBtn.innerHTML = `<span class="spinner-sm"></span> Checking...`;
+            el.verifyAlert.classList.add('hidden');
+            try {
+                await reload(auth.currentUser);
+                if (auth.currentUser.emailVerified) {
+                    stopCooldown();
+                    toast('Email verified! Entering Omnicampus...', 'success');
+                    await bootApp(auth.currentUser);
+                } else {
+                    el.verifyAlert.textContent = 'Still unverified — click the link in your inbox (check Spam), then try again.';
+                    el.verifyAlert.classList.remove('hidden');
+                    toast('Not verified yet.', 'warning');
+                }
+            } catch (err) {
+                toast(errText(err), 'error');
+            } finally {
+                el.checkVerifiedBtn.disabled = false;
+                el.checkVerifiedBtn.textContent = "✓ I've Verified — Enter Omnicampus";
+            }
+        });
+
+        el.resendBtn.addEventListener('click', async () => {
+            if (!auth.currentUser || state.resendLeft > 0) return;
+            el.resendBtn.disabled = true;
+            el.resendBtn.innerHTML = `<span class="spinner-sm"></span> Sending...`;
+            try {
+                await sendEmailVerification(auth.currentUser);
+                startCooldown(60);
+                toast(`Sent again to ${auth.currentUser.email}`, 'success');
+            } catch (err) {
+                el.resendBtn.disabled = false;
+                el.resendBtn.textContent = 'Resend Verification Email';
+                toast(errText(err), 'error');
+            }
+        });
+
+        async function doSignOut() {
+            stopListeners();
+            stopCooldown();
+            try {
+                await signOut(auth);
+                toast('Signed out.', 'success');
+            } catch (err) {
+                toast(errText(err), 'error');
+            }
+        }
+
+        el.verifySignoutBtn.addEventListener('click', doSignOut);
+        el.logoutBtn.addEventListener('click', doSignOut);
+
+        // only attach db listeners after login + email verification
+        function stopListeners() {
+            Object.keys(state.unsubs).forEach((k) => {
+                if (state.unsubs[k]) {
+                    state.unsubs[k]();
+                    state.unsubs[k] = null;
+                }
+            });
+        }
+
+        // load 35 posts at a time to keep initial render quick
+        function subscribePosts() {
+            if (state.unsubs.posts) {
+                state.unsubs.posts();
+                state.unsubs.posts = null;
+            }
+            const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(state.postLimit));
+            state.unsubs.posts = onSnapshot(q, (snap) => {
+                const rows = [];
+                snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+                rows.sort((a, b) => getTimeMs(b) - getTimeMs(a));
+                state.posts = rows;
+                state.hasMorePosts = snap.size >= state.postLimit;
+                el.loadMoreBtn.disabled = false;
+                el.loadMoreBtn.textContent = 'Load more posts';
+                scheduleRender();
+            }, (err) => toast(errText(err), 'error'));
+        }
+
+        function startListeners(uid) {
+            stopListeners();
+
+            state.unsubs.self = onSnapshot(doc(db, 'users', uid), (snap) => {
+                if (!snap.exists()) return;
+                const d = snap.data();
+                state.user = { uid, ...d, displayName: nameOf(d) };
+                syncUserChrome();
+                scheduleRender();
+            }, (err) => toast(errText(err), 'error'));
+
+            state.unsubs.users = onSnapshot(collection(db, 'users'), (snap) => {
+                const list = [];
+                snap.forEach((d) => {
+                    const data = d.data();
+                    list.push({ uid: d.id, ...data, displayName: nameOf(data) });
+                });
+                state.users = list;
+                syncFacultyCounters();
+                if (state.tab === 'leaderboard' || state.tab === 'approvals') scheduleRender();
+            }, (err) => toast(errText(err), 'error'));
+
+            subscribePosts();
+
+            state.unsubs.entries = onSnapshot(collection(db, 'pointEntries'), (snap) => {
+                const list = [];
+                snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+                list.sort((a, b) => (b.approvedAt || 0) - (a.approvedAt || 0));
+                state.pointEntries = list;
+                syncUserChrome();
+                syncFacultyCounters();
+                scheduleRender();
+            }, (err) => toast(errText(err), 'error'));
+
+            if (isSuperAdmin(state.user)) {
+                state.unsubs.whitelist = onSnapshot(collection(db, 'faculty_whitelist'), (snap) => {
+                    const list = [];
+                    snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+                    list.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+                    state.whitelist = list;
+                    syncWhitelistBadge();
+                    if (state.tab === 'whitelist') scheduleRender();
+                }, (err) => toast(errText(err), 'error'));
+            }
+        }
+
+        // batch dom updates into one animation frame
+        let rafPending = false;
+        function scheduleRender() {
+            if (rafPending) return;
+            rafPending = true;
+            requestAnimationFrame(() => {
+                rafPending = false;
+                renderActiveTab();
+            });
+        }
+
+        async function bootApp(fbUser) {
+            try {
+                const ref = doc(db, 'users', fbUser.uid);
+                const snap = await getDoc(ref);
+                const email = (fbUser.email || '').toLowerCase();
+                const superMail = isSuperAdminEmail(email);
+
+                if (!snap.exists()) {
+                    const wlSnap = !superMail && !isStudentEmail(email)
+                        ? await getDoc(doc(db, 'faculty_whitelist', email))
+                        : null;
+                    const role = superMail ? 'super_admin' : (wlSnap?.exists() ? 'faculty' : 'student');
+                    const displayName = fbUser.displayName || wlSnap?.data()?.name || (superMail ? 'Arnav' : email.split('@')[0]);
+                    const profile = {
+                        uid: fbUser.uid,
+                        email,
+                        displayName,
+                        role,
+                        batchLabel: role === 'super_admin'
+                            ? 'Super Admin • Omnicampus'
+                            : role === 'faculty'
+                                ? 'Faculty • MITS Gwalior'
+                                : batchLabelFromEmail(email),
+                        points: 0,
+                        verifiedCredits: 0,
+                        removedFromLeaderboard: false,
+                        createdAt: Date.now()
+                    };
+                    await setDoc(ref, profile);
+                    state.user = profile;
+                } else {
+                    const d = snap.data();
+                    if (superMail && d.role !== 'super_admin') {
+                        await updateDoc(ref, { role: 'super_admin', batchLabel: 'Super Admin • Omnicampus' });
+                        d.role = 'super_admin';
+                        d.batchLabel = 'Super Admin • Omnicampus';
+                    }
+                    state.user = { uid: fbUser.uid, ...d, displayName: nameOf(d) };
+                }
+
+                if (el.sessionChecking) el.sessionChecking.classList.add('hidden');
+                el.authView.classList.add('hidden');
+                el.verifyView.classList.add('hidden');
+                el.gateThemeBtn.classList.add('hidden');
+                el.appView.classList.remove('hidden');
+
+                state.postLimit = PAGE_SIZE;
+                syncUserChrome();
+                setTab('feed');
+                startListeners(fbUser.uid);
+            } catch (err) {
+                if (el.sessionChecking) el.sessionChecking.classList.add('hidden');
+                el.authView.classList.remove('hidden');
+                el.gateThemeBtn.classList.remove('hidden');
+                showAuthError(errText(err));
+            }
+        }
+
+        onAuthStateChanged(auth, async (fbUser) => {
+            if (el.sessionChecking) el.sessionChecking.classList.add('hidden');
+            if (!fbUser) {
+                stopListeners();
+                stopCooldown();
+                state.user = null;
+                state.users = [];
+                state.whitelist = [];
+                state.posts = [];
+                state.pointEntries = [];
+                state.expandedPosts.clear();
+                state.drafts.clear();
+                state.postLimit = PAGE_SIZE;
+
+                el.appView.classList.add('hidden');
+                el.verifyView.classList.add('hidden');
+                el.authView.classList.remove('hidden');
+                el.gateThemeBtn.classList.remove('hidden');
+                syncAuthForm();
+                return;
+            }
+            if (!fbUser.emailVerified && !isSuperAdminEmail(fbUser.email)) {
+                openVerifyGate(fbUser);
+                return;
+            }
+            await bootApp(fbUser);
+        });
+
+        // navbar & sidebar state
+        function syncUserChrome() {
+            const u = state.user;
+            if (!u) return;
+
+            const isStaff = isStaffRole(u.role);
+            const isSuper = isSuperAdmin(u);
+            const name = nameOf(u);
+            const pts = Number(u.points || 0);
+            const verified = Number(u.verifiedCredits || 0);
+            const init = initialsOf(name);
+
+            el.navAvatar.textContent = init;
+            el.navAvatar.classList.toggle('avatar-faculty', isStaff);
+            el.composerAvatar.textContent = init;
+            el.composerAvatar.classList.toggle('avatar-faculty', isStaff);
+            el.navName.textContent = name;
+
+            if (isStaff) {
+                el.navBatch.textContent = isSuper ? 'Super Admin' : 'Faculty';
+                el.navSep.classList.add('hidden');
+                el.navPts.classList.add('hidden');
+            } else {
+                el.navBatch.textContent = (u.batchLabel || 'Student').split('•')[0].trim();
+                el.navSep.classList.remove('hidden');
+                el.navPts.classList.remove('hidden');
+                el.navPts.textContent = `${pts} pts`;
+            }
+
+            el.tabCredits.classList.toggle('hidden', isStaff);
+            el.tabApprovals.classList.toggle('hidden', !isStaff);
+            el.tabWhitelist.classList.toggle('hidden', !isSuper);
+            el.stuSide.classList.toggle('hidden', isStaff);
+            el.facSide.classList.toggle('hidden', !isStaff);
+            el.facSideRoleBadge.textContent = isSuper ? 'SUPER ADMIN' : 'FACULTY';
+            el.openWhitelistBtn.classList.toggle('hidden', !isSuper);
+
+            if (isStaff && state.tab === 'credits') setTab('approvals');
+            else if (!isStaff && state.tab === 'approvals') setTab('credits');
+            else if (!isSuper && state.tab === 'whitelist') setTab('feed');
+
+            if (!isStaff) {
+                const rem = pts % PTS_PER_CREDIT;
+                const pct = Math.min(100, (rem / PTS_PER_CREDIT) * 100);
+                el.sidePts.textContent = pts;
+                el.sideCredits.textContent = verified;
+                el.sideProgText.textContent = `${rem} / ${PTS_PER_CREDIT} pts`;
+                el.sideProgBar.style.width = `${pct}%`;
+            } else {
+                syncFacultyCounters();
+                if (isSuper) syncWhitelistBadge();
+            }
+        }
+
+        function syncWhitelistBadge() {
+            const count = state.whitelist.length;
+            el.whitelistBadge.textContent = count;
+            el.whitelistBadge.classList.toggle('hidden', count === 0);
+        }
+
+        function getAuditStats() {
+            let pending = 0, valid = 0, ready = 0, granted = 0;
+            const validByStu = new Map();
+
+            for (const pe of state.pointEntries) {
+                if (pe.status === 'pending') pending++;
+                else if (pe.status === 'valid') {
+                    valid++;
+                    validByStu.set(pe.studentUid, (validByStu.get(pe.studentUid) || 0) + 1);
+                }
+            }
+            validByStu.forEach((n) => { if (n >= PTS_PER_CREDIT) ready++; });
+            for (const u of state.users) granted += Number(u.verifiedCredits || 0);
+            return { pending, valid, ready, granted };
+        }
+
+        function syncFacultyCounters() {
+            if (!isStaffRole(state.user?.role)) return;
+            const s = getAuditStats();
+            el.pendingBadge.textContent = s.pending;
+            el.pendingBadge.classList.toggle('hidden', s.pending === 0);
+
+            el.facSidePending.textContent = s.pending;
+            el.facSideValid.textContent = s.valid;
+            el.facSideReady.textContent = s.ready;
+            el.facSideGranted.textContent = s.granted;
+
+            el.appPending.textContent = s.pending;
+            el.appValid.textContent = s.valid;
+            el.appReady.textContent = s.ready;
+            el.appGranted.textContent = s.granted;
+        }
+
+        function setTab(tab) {
+            const isStaff = isStaffRole(state.user?.role);
+            const isSuper = isSuperAdmin(state.user);
+            if (tab === 'approvals' && !isStaff) return;
+            if (tab === 'whitelist' && !isSuper) return;
+            if (tab === 'credits' && isStaff) return;
+
+            state.tab = tab;
+            el.navTabs.forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
+            Object.entries(el.views).forEach(([k, sec]) => sec.classList.toggle('hidden', k !== tab));
+            renderActiveTab();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderActiveTab() {
+            if (state.tab === 'feed') renderFeed();
+            else if (state.tab === 'leaderboard') renderLeaderboard();
+            else if (state.tab === 'credits') renderCredits();
+            else if (state.tab === 'approvals') renderApprovals();
+            else if (state.tab === 'whitelist') renderWhitelist();
+        }
+
+        el.navTabs.forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
+        el.brandHome.addEventListener('click', () => setTab('feed'));
+        el.openApprovalsBtn.addEventListener('click', () => setTab('approvals'));
+        el.openWhitelistBtn.addEventListener('click', () => setTab('whitelist'));
+
+        // debounce search so we dont re-render on every keystroke
+        let searchTimer = null;
+        el.searchInput.addEventListener('input', () => {
+            const val = el.searchInput.value.trim();
+            el.searchClear.classList.toggle('hidden', !val);
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                state.search = val.toLowerCase();
+                if (state.tab !== 'feed') setTab('feed');
+                else renderFeed();
+            }, 180);
+        });
+
+        el.searchClear.addEventListener('click', () => {
+            clearTimeout(searchTimer);
+            el.searchInput.value = '';
+            state.search = '';
+            el.searchClear.classList.add('hidden');
+            renderFeed();
+            el.searchInput.focus();
+        });
+
+        // post composer modal
+        function openPostModal() {
+            el.postModal.classList.remove('hidden');
+            setTimeout(() => el.postTitle.focus(), 30);
+        }
+
+        function clearImg() {
+            state.pendingImg = null;
+            el.postImgInput.value = '';
+            el.imgPrevEl.src = '';
+            el.imgPrevBox.classList.add('hidden');
+            el.dropzone.classList.remove('hidden');
+        }
+
+        function closePostModal() {
+            el.postModal.classList.add('hidden');
+            el.postForm.reset();
+            clearImg();
+        }
+
+        async function handlePic(file) {
+            if (!file) return;
+            try {
+                const res = await compressPic(file);
+                state.pendingImg = res;
+                el.imgPrevEl.src = res.dataUrl;
+                el.imgPrevMeta.textContent = `${res.w}×${res.h} • ${res.kb} KB ${res.format}`;
+                el.dropzone.classList.add('hidden');
+                el.imgPrevBox.classList.remove('hidden');
+                toast(`Compressed to ${res.kb} KB (${res.format})`, 'success');
+            } catch (err) {
+                toast(err.message || 'Image upload failed.', 'error');
+            }
+        }
+
+        el.composerBar.addEventListener('click', openPostModal);
+        el.composerBar.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPostModal(); }
+        });
+        el.postModalX.addEventListener('click', closePostModal);
+        el.postCancel.addEventListener('click', closePostModal);
+        el.postModal.addEventListener('click', (e) => { if (e.target === el.postModal) closePostModal(); });
+        el.imgRmBtn.addEventListener('click', clearImg);
+
+        el.dropzone.addEventListener('click', () => el.postImgInput.click());
+        el.dropzone.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.postImgInput.click(); }
+        });
+        el.postImgInput.addEventListener('change', (e) => { if (e.target.files?.[0]) handlePic(e.target.files[0]); });
+        el.dropzone.addEventListener('dragover', (e) => { e.preventDefault(); el.dropzone.classList.add('dragover'); });
+        el.dropzone.addEventListener('dragleave', () => el.dropzone.classList.remove('dragover'));
+        el.dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            el.dropzone.classList.remove('dragover');
+            if (e.dataTransfer.files?.[0]) handlePic(e.dataTransfer.files[0]);
+        });
+
+        el.postForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!state.user) return;
+            const title = el.postTitle.value.trim();
+            const body = el.postBody.value.trim();
+            const category = el.postCat.value;
+            if (!title || !body) return toast('Add a title and description first.', 'warning');
+
+            el.postSubmit.disabled = true;
+            el.postSubmit.innerHTML = `<span class="spinner-sm"></span> Publishing...`;
+            try {
+                await addDoc(collection(db, 'posts'), {
+                    title,
+                    body,
+                    category,
+                    authorUid: state.user.uid,
+                    authorName: nameOf(state.user),
+                    authorEmail: state.user.email,
+                    authorBatch: state.user.batchLabel || '',
+                    authorRole: state.user.role,
+                    imageData: state.pendingImg ? state.pendingImg.dataUrl : null,
+                    imageW: state.pendingImg ? state.pendingImg.w : null,
+                    imageH: state.pendingImg ? state.pendingImg.h : null,
+                    upvotes: [],
+                    solved: false,
+                    comments: [],
+                    createdAt: Date.now()
+                });
+                closePostModal();
+                toast('Post published!', 'success');
+            } catch (err) {
+                toast(errText(err), 'error');
+            } finally {
+                el.postSubmit.disabled = false;
+                el.postSubmit.textContent = 'Publish Post';
+            }
+        });
+
+        // category filter clicks
+        el.filterBar.addEventListener('click', (e) => {
+            const btn = e.target.closest('.filter-pill');
+            if (!btn) return;
+            state.filter = btn.dataset.filter;
+            el.filterBar.querySelectorAll('.filter-pill').forEach((p) => p.classList.toggle('active', p === btn));
+            renderFeed();
+        });
+
+        // load next batch of posts
+        el.loadMoreBtn.addEventListener('click', () => {
+            el.loadMoreBtn.disabled = true;
+            el.loadMoreBtn.innerHTML = `<span class="spinner-sm"></span> Loading...`;
+            state.postLimit += PAGE_SIZE;
+            subscribePosts();
+        });
+
+        // feed rendering
+        function filterPosts() {
+            return state.posts.filter((p) => {
+                if (state.filter === 'Solved' && !p.solved) return false;
+                if (state.filter === 'Unsolved' && p.solved) return false;
+                if (state.filter !== 'All' && state.filter !== 'Solved' && state.filter !== 'Unsolved' && p.category !== state.filter) return false;
+                if (state.search) {
+                    const txt = `${p.title || ''} ${p.body || ''} ${p.category || ''} ${p.authorName || ''} ${p.authorBatch || ''}`.toLowerCase();
+                    if (!txt.includes(state.search)) return false;
+                }
+                return true;
+            });
+        }
+
+        function commentBadge(postId, c, entryMap) {
+            const entry = entryMap.get(`${postId}_${c.id}`);
+            const st = entry?.status || c.auditStatus || (c.approved ? 'pending' : 'none');
+            if (st === 'consumed') return `<span class="badge badge-info">🎓 Credited (+1 pt)</span>`;
+            if (st === 'valid') return `<span class="badge badge-solid-accent">✓ Faculty Validated (+1 pt)</span>`;
+            if (st === 'pending' && c.approved) return `<span class="badge badge-warn">⏳ Approved • Pending Audit (+1 pt)</span>`;
+            if (st === 'revoked') return `<span class="badge badge-danger">✕ Revoked by Faculty</span>`;
+            if (c.approved) return `<span class="badge badge-solid-accent">✓ Approved (+1 pt)</span>`;
+            return '';
+        }
+
+        function renderFeed() {
+            if (!state.user) return;
+
+            const active = document.activeElement;
+            const draftPid = active?.classList?.contains('comment-input') ? active.dataset.postId : null;
+            const cursorPos = draftPid ? active.selectionStart : null;
+
+            const list = filterPosts();
+            el.loadMoreWrap.classList.toggle('hidden', !state.hasMorePosts);
+
+            if (list.length === 0) {
+                el.postsBox.innerHTML = `
+                    <div class="empty-box">
+                        <h3>No matching posts found</h3>
+                        <p>${state.search || state.filter !== 'All'
+                            ? 'Try clearing your search or changing filters.'
+                            : 'Be the first to drop a question or doubt!'}</p>
+                    </div>`;
+                return;
+            }
+
+            const uid = state.user.uid;
+            const isStaff = isStaffRole(state.user.role);
+            const entryMap = new Map(state.pointEntries.map((pe) => [pe.id, pe]));
+
+            el.postsBox.innerHTML = list.map((post) => {
+                const ups = Array.isArray(post.upvotes) ? post.upvotes : [];
+                const upvoted = ups.includes(uid);
+                const comments = (Array.isArray(post.comments) ? [...post.comments] : [])
+                    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                const canDel = post.authorUid === uid || isStaff;
+                const canApprove = post.authorUid === uid || isStaff;
+                const open = state.expandedPosts.has(post.id);
+                const draft = state.drafts.get(post.id) || '';
+
+                const authorTag = post.authorRole === 'super_admin'
+                    ? `<span class="badge badge-warn">👑 Super Admin</span>`
+                    : post.authorRole === 'faculty'
+                        ? `<span class="badge badge-warn">🏛️ Faculty</span>`
+                        : `<span class="badge badge-pill">${esc(post.authorBatch || 'Student')}</span>`;
+
+                const commentsHtml = comments.length === 0
+                    ? `<div style="font-size: 0.82rem; color: var(--text-muted); text-align: center; padding: 10px 0;">No solutions yet — help out for +1 point!</div>`
+                    : comments.map((c) => {
+                        const cTag = c.authorRole === 'super_admin'
+                            ? `<span class="badge badge-warn">Super Admin</span>`
+                            : c.authorRole === 'faculty'
+                                ? `<span class="badge badge-warn">Faculty</span>`
+                                : `<span class="badge badge-pill">${esc(c.authorBatch || 'Student')}</span>`;
+                        const revoked = c.auditStatus === 'revoked';
+                        const showApprove = canApprove && !c.approved && !revoked && c.authorUid !== uid && c.authorUid !== post.authorUid;
+                        return `
+                            <div class="comment-item ${c.approved ? 'approved' : ''} ${revoked ? 'revoked' : ''}">
+                                <div class="comment-head">
+                                    <div class="comment-author">
+                                        <strong>${esc(c.authorName)}</strong>
+                                        ${cTag}
+                                        <span aria-hidden="true">•</span>
+                                        <span>${timeAgo(c.createdAt)}</span>
+                                    </div>
+                                    ${commentBadge(post.id, c, entryMap)}
+                                </div>
+                                <div class="comment-text">${esc(c.text)}</div>
+                                ${showApprove ? `
+                                    <div class="comment-actions">
+                                        <button type="button" class="btn btn-accent-outline btn-sm btn-approve" data-pid="${esc(post.id)}" data-cid="${esc(c.id)}">
+                                            ✓ Approve Solution (+1 pt)
+                                        </button>
+                                    </div>` : ''}
+                            </div>`;
+                    }).join('');
+
+                return `
+                    <article class="post-card ${post.solved ? 'is-solved' : ''}">
+                        <div class="vote-col">
+                            <button type="button" class="vote-btn ${upvoted ? 'upvoted' : ''}" data-act="upvote" data-pid="${esc(post.id)}" aria-label="Upvote post" aria-pressed="${upvoted}">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="${upvoted ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>
+                                </svg>
+                            </button>
+                            <span class="vote-count ${upvoted ? 'upvoted' : ''}">${ups.length}</span>
+                        </div>
+
+                        <div class="post-main">
+                            <div class="post-meta-row">
+                                <div class="post-author-meta">
+                                    <span class="post-author-name">${esc(post.authorName)}</span>
+                                    ${authorTag}
+                                    <span aria-hidden="true">•</span>
+                                    <span>${timeAgo(post)}</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                    <span class="badge badge-pill">${esc(post.category || 'Academics')}</span>
+                                    ${post.solved ? `<span class="badge badge-accent">✓ Solved</span>` : ''}
+                                </div>
+                            </div>
+
+                            <h2 class="post-title">${esc(post.title)}</h2>
+                            <p class="post-body">${esc(post.body)}</p>
+
+                            ${post.imageData ? `
+                                <div class="post-img-box" data-act="lightbox" data-pid="${esc(post.id)}" title="Click to enlarge">
+                                    <img src="${post.imageData}" width="${post.imageW || 800}" height="${post.imageH || 450}" alt="Attachment for ${esc(post.title)}" loading="lazy" decoding="async">
+                                </div>` : ''}
+
+                            <div class="post-footer">
+                                <button type="button" class="post-act-btn ${open ? 'active' : ''}" data-act="toggle" data-pid="${esc(post.id)}" aria-expanded="${open}">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                    </svg>
+                                    <span>${comments.length} ${comments.length === 1 ? 'Solution' : 'Solutions'}</span>
+                                    <span aria-hidden="true">${open ? '▴' : '▾'}</span>
+                                </button>
+
+                                ${canDel ? `
+                                    <button type="button" class="post-act-btn post-del-btn" data-act="delete" data-pid="${esc(post.id)}">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+                                        </svg>
+                                        <span>Delete</span>
+                                    </button>` : ''}
+                            </div>
+
+                            <div class="comments-drawer ${open ? '' : 'hidden'}">
+                                <form class="comment-form" data-pid="${esc(post.id)}">
+                                    <textarea class="comment-input" data-post-id="${esc(post.id)}" rows="1" placeholder="Write a helpful solution..." aria-label="Write a solution" required>${esc(draft)}</textarea>
+                                    <button type="submit" class="btn btn-primary btn-sm">Reply</button>
+                                </form>
+                                <div class="comments-list">${commentsHtml}</div>
+                            </div>
+                        </div>
+                    </article>`;
+            }).join('');
+
+            if (draftPid) {
+                const box = el.postsBox.querySelector(`.comment-input[data-post-id="${CSS.escape(draftPid)}"]`);
+                if (box) {
+                    box.focus();
+                    if (cursorPos !== null) box.setSelectionRange(cursorPos, cursorPos);
+                }
+            }
+        }
+
+        // event delegation for the whole feed
+        el.postsBox.addEventListener('input', (e) => {
+            if (e.target.classList.contains('comment-input')) {
+                state.drafts.set(e.target.dataset.postId, e.target.value);
+            }
+        });
+
+        el.postsBox.addEventListener('click', async (e) => {
+            const appBtn = e.target.closest('.btn-approve');
+            if (appBtn) {
+                await approveSolution(appBtn.dataset.pid, appBtn.dataset.cid, appBtn);
+                return;
+            }
+            const actEl = e.target.closest('[data-act]');
+            if (!actEl) return;
+
+            const act = actEl.dataset.act;
+            const pid = actEl.dataset.pid;
+
+            if (act === 'toggle') {
+                if (state.expandedPosts.has(pid)) state.expandedPosts.delete(pid);
+                else state.expandedPosts.add(pid);
+                renderFeed();
+            } else if (act === 'upvote') {
+                const p = state.posts.find((x) => x.id === pid);
+                if (!p || !state.user) return;
+                const already = Array.isArray(p.upvotes) && p.upvotes.includes(state.user.uid);
+                try {
+                    await updateDoc(doc(db, 'posts', pid), {
+                        upvotes: already ? arrayRemove(state.user.uid) : arrayUnion(state.user.uid)
+                    });
+                } catch (err) { toast(errText(err), 'error'); }
+            } else if (act === 'lightbox') {
+                const p = state.posts.find((x) => x.id === pid);
+                if (p?.imageData) openLightbox(p.imageData, p.title);
+            } else if (act === 'delete') {
+                await deletePostAndRollback(pid);
+            }
+        });
+
+        el.postsBox.addEventListener('submit', async (e) => {
+            if (!e.target.classList.contains('comment-form')) return;
+            e.preventDefault();
+            if (!state.user) return;
+
+            const pid = e.target.dataset.pid;
+            const input = e.target.querySelector('.comment-input');
+            const btn = e.target.querySelector('button[type="submit"]');
+            const text = input.value.trim();
+            if (!text) return;
+
+            btn.disabled = true;
+            try {
+                await updateDoc(doc(db, 'posts', pid), {
+                    comments: arrayUnion({
+                        id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                        authorUid: state.user.uid,
+                        authorName: nameOf(state.user),
+                        authorEmail: state.user.email,
+                        authorBatch: state.user.batchLabel || '',
+                        authorRole: state.user.role,
+                        text,
+                        createdAt: Date.now(),
+                        approved: false,
+                        auditStatus: 'none'
+                    })
+                });
+                state.drafts.delete(pid);
+                state.expandedPosts.add(pid);
+                toast('Solution posted!', 'success');
+            } catch (err) {
+                toast(errText(err), 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        // approve answer + queue it for faculty audit
+        async function approveSolution(postId, commentId, btn) {
+            if (!state.user) return;
+            const post = state.posts.find((p) => p.id === postId);
+            if (!post) return;
+
+            if (post.authorUid !== state.user.uid && !isStaffRole(state.user.role)) {
+                return toast('Only the author or faculty can approve solutions.', 'error');
+            }
+
+            const comments = Array.isArray(post.comments) ? [...post.comments] : [];
+            const idx = comments.findIndex((c) => c.id === commentId);
+            if (idx === -1) return;
+
+            const target = comments[idx];
+            if (target.approved) return;
+            if (target.authorUid === state.user.uid || target.authorUid === post.authorUid) {
+                return toast('Self-approval is disabled.', 'warning');
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Approving...';
+            try {
+                comments[idx] = { ...target, approved: true, auditStatus: 'pending' };
+                const entryId = `${postId}_${commentId}`;
+                const solver = state.users.find((u) => u.uid === target.authorUid);
+
+                await updateDoc(doc(db, 'posts', postId), { solved: true, comments });
+                await setDoc(doc(db, 'pointEntries', entryId), {
+                    id: entryId,
+                    postId,
+                    postTitle: post.title || 'Untitled Question',
+                    postCategory: post.category || 'Academics',
+                    commentId,
+                    answerText: target.text || '',
+                    studentUid: target.authorUid,
+                    studentName: target.authorName || nameOf(solver),
+                    studentEmail: target.authorEmail || solver?.email || '',
+                    studentBatch: target.authorBatch || solver?.batchLabel || 'MITS Student',
+                    approvedByUid: state.user.uid,
+                    approvedByName: nameOf(state.user),
+                    approvedAt: Date.now(),
+                    status: 'pending'
+                });
+                await updateStudentPts(target.authorUid, 1);
+                toast(`Approved! +1 pt given to ${target.authorName}.`, 'success');
+            } catch (err) {
+                btn.disabled = false;
+                btn.textContent = '✓ Approve Solution (+1 pt)';
+                toast(errText(err), 'error');
+            }
+        }
+
+        // roll back points if a post gets deleted
+        async function deletePostAndRollback(postId) {
+            if (!state.user) return;
+            const post = state.posts.find((p) => p.id === postId);
+            if (!post) return;
+            if (post.authorUid !== state.user.uid && !isStaffRole(state.user.role)) {
+                return toast('Not allowed to delete this post.', 'error');
+            }
+
+            const activeEntries = state.pointEntries.filter(
+                (pe) => pe.postId === postId && (pe.status === 'pending' || pe.status === 'valid')
+            );
+            const trackedCids = new Set(state.pointEntries.filter((pe) => pe.postId === postId).map((pe) => pe.commentId));
+            const oldApproved = (Array.isArray(post.comments) ? post.comments : []).filter(
+                (c) => c.approved && !trackedCids.has(c.id)
+            );
+
+            const rollbackCount = activeEntries.length + oldApproved.length;
+            const warnMsg = rollbackCount > 0
+                ? `Deleting this post will deduct ${rollbackCount} active approved ${rollbackCount === 1 ? 'point' : 'points'} from the solver(s) and clear those audit records.`
+                : '';
+
+            const ok = await confirmAction({
+                title: 'Delete Post?',
+                message: `Permanently delete "${post.title}" and all its replies?`,
+                warning: warnMsg,
+                okLabel: rollbackCount > 0 ? `Delete & Rollback ${rollbackCount} pt(s)` : 'Delete Post',
+                okVariant: 'danger'
+            });
+            if (!ok) return;
+
+            try {
+                const deductMap = new Map();
+                activeEntries.forEach((pe) => {
+                    if (pe.studentUid) deductMap.set(pe.studentUid, (deductMap.get(pe.studentUid) || 0) + 1);
+                });
+                oldApproved.forEach((c) => {
+                    if (c.authorUid) deductMap.set(c.authorUid, (deductMap.get(c.authorUid) || 0) + 1);
+                });
+
+                for (const [stuUid, count] of deductMap.entries()) {
+                    await updateStudentPts(stuUid, -count);
+                }
+
+                const batch = writeBatch(db);
+                activeEntries.forEach((pe) => batch.delete(doc(db, 'pointEntries', pe.id)));
+                batch.delete(doc(db, 'posts', postId));
+                await batch.commit();
+
+                state.expandedPosts.delete(postId);
+                state.drafts.delete(postId);
+                toast(rollbackCount > 0 ? `Post deleted & ${rollbackCount} point(s) rolled back.` : 'Post deleted.', 'success');
+            } catch (err) {
+                toast(errText(err), 'error');
+            }
+        }
+
+        // leaderboard & faculty hide/restore
+        function renderLeaderboard() {
+            const isStaff = isStaffRole(state.user?.role);
+            el.lbActionTh.classList.toggle('hidden', !isStaff);
+            el.removedSec.classList.toggle('hidden', !isStaff);
+
+            const active = state.users
+                .filter((u) => u.role === 'student' && u.removedFromLeaderboard !== true)
+                .sort((a, b) => (b.points || 0) - (a.points || 0) || (b.verifiedCredits || 0) - (a.verifiedCredits || 0) || nameOf(a).localeCompare(nameOf(b)));
+
+            const cols = isStaff ? 6 : 5;
+            if (active.length === 0) {
+                el.lbTbody.innerHTML = `<tr><td colspan="${cols}" style="text-align: center; padding: 34px; color: var(--text-secondary);">No active students on the leaderboard yet.</td></tr>`;
+            } else {
+                const myUid = state.user?.uid;
+                el.lbTbody.innerHTML = active.map((stu, i) => {
+                    const r = i + 1;
+                    const rCls = r === 1 ? 'rank-1' : r === 2 ? 'rank-2' : r === 3 ? 'rank-3' : '';
+                    const rTxt = r === 1 ? '🥇 1' : r === 2 ? '🥈 2' : r === 3 ? '🥉 3' : `#${r}`;
+                    const n = nameOf(stu);
+                    const me = stu.uid === myUid;
+                    const cred = Number(stu.verifiedCredits || 0);
+                    return `
+                        <tr class="${me ? 'me-row' : ''}">
+                            <td><span class="rank-badge ${rCls}">${rTxt}</span></td>
+                            <td>
+                                <div class="stu-cell">
+                                    <div class="avatar" aria-hidden="true">${esc(initialsOf(n))}</div>
+                                    <div>
+                                        <div class="stu-name">${esc(n)} ${me ? `<span class="badge badge-accent" style="margin-left: 5px;">You</span>` : ''}</div>
+                                        <div class="stu-sub">${esc(stu.email || '')}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge badge-pill">${esc(stu.batchLabel || 'MITS Student')}</span></td>
+                            <td class="text-right" style="font-weight: 800; color: var(--accent-text);">${Number(stu.points || 0)}</td>
+                            <td class="text-right"><span class="badge ${cred > 0 ? 'badge-accent' : 'badge-pill'}">${cred} Official</span></td>
+                            ${isStaff ? `<td class="text-right"><button type="button" class="btn btn-danger-outline btn-sm btn-rm-lb" data-uid="${esc(stu.uid)}" data-name="${esc(n)}">Remove</button></td>` : ''}
+                        </tr>`;
+                }).join('');
+            }
+
+            if (isStaff) {
+                const removed = state.users
+                    .filter((u) => u.role === 'student' && u.removedFromLeaderboard === true)
+                    .sort((a, b) => (b.points || 0) - (a.points || 0));
+                el.removedCount.textContent = removed.length;
+                el.removedTbody.innerHTML = removed.length === 0
+                    ? `<tr><td colspan="5" style="text-align: center; padding: 24px; color: var(--text-secondary);">No removed students.</td></tr>`
+                    : removed.map((stu) => {
+                        const n = nameOf(stu);
+                        return `
+                            <tr>
+                                <td>
+                                    <div class="stu-cell">
+                                        <div class="avatar" aria-hidden="true">${esc(initialsOf(n))}</div>
+                                        <div>
+                                            <div class="stu-name">${esc(n)}</div>
+                                            <div class="stu-sub">${esc(stu.email || '')}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="badge badge-pill">${esc(stu.batchLabel || 'MITS Student')}</span></td>
+                                <td class="text-right" style="font-weight: 700;">${Number(stu.points || 0)}</td>
+                                <td class="text-right">${Number(stu.verifiedCredits || 0)}</td>
+                                <td class="text-right"><button type="button" class="btn btn-accent-outline btn-sm btn-restore-lb" data-uid="${esc(stu.uid)}" data-name="${esc(n)}">Restore</button></td>
+                            </tr>`;
+                    }).join('');
+            }
+        }
+
+        el.toggleRemovedBtn.addEventListener('click', () => {
+            state.removedOpen = !state.removedOpen;
+            el.removedWrap.classList.toggle('hidden', !state.removedOpen);
+            el.toggleRemovedBtn.setAttribute('aria-expanded', String(state.removedOpen));
+            el.removedChevron.textContent = state.removedOpen ? '▴' : '▾';
+        });
+
+        el.lbTbody.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.btn-rm-lb');
+            if (!btn || !isStaffRole(state.user?.role)) return;
+            const ok = await confirmAction({
+                title: 'Remove from Leaderboard?',
+                message: `Hide "${btn.dataset.name}" from the leaderboard? You can restore them anytime below.`,
+                okLabel: 'Remove',
+                okVariant: 'danger'
+            });
+            if (!ok) return;
+            btn.disabled = true;
+            try {
+                await updateDoc(doc(db, 'users', btn.dataset.uid), { removedFromLeaderboard: true });
+                toast(`${btn.dataset.name} removed from Leaderboard.`, 'success');
+            } catch (err) {
+                btn.disabled = false;
+                toast(errText(err), 'error');
+            }
+        });
+
+        el.removedTbody.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.btn-restore-lb');
+            if (!btn || !isStaffRole(state.user?.role)) return;
+            btn.disabled = true;
+            try {
+                await updateDoc(doc(db, 'users', btn.dataset.uid), { removedFromLeaderboard: false });
+                toast(`${btn.dataset.name} restored to Leaderboard.`, 'success');
+            } catch (err) {
+                btn.disabled = false;
+                toast(errText(err), 'error');
+            }
+        });
+
+        // student my credits tab
+        function entryStatusTag(st) {
+            if (st === 'valid') return `<span class="badge badge-solid-accent">Faculty Validated ✅</span>`;
+            if (st === 'consumed') return `<span class="badge badge-info">Credited 🎓</span>`;
+            if (st === 'revoked') return `<span class="badge badge-danger">Revoked ❌</span>`;
+            return `<span class="badge badge-warn">Pending Faculty Audit</span>`;
+        }
+
+        function renderCredits() {
+            const u = state.user;
+            if (!u || isStaffRole(u.role)) return;
+
+            const pts = Number(u.points || 0);
+            const verified = Number(u.verifiedCredits || 0);
+            const mine = state.pointEntries.filter((pe) => pe.studentUid === u.uid);
+            const validCount = mine.filter((pe) => pe.status === 'valid').length;
+            const pct = Math.min(100, (validCount / PTS_PER_CREDIT) * 100);
+            const rem = Math.max(0, PTS_PER_CREDIT - validCount);
+
+            el.credPts.textContent = pts;
+            el.credValid.textContent = `${validCount} / ${PTS_PER_CREDIT}`;
+            el.credVerified.textContent = verified;
+            el.credProgLabel.textContent = `${validCount} / ${PTS_PER_CREDIT} Validated`;
+            el.credProgBar.style.width = `${pct}%`;
+            el.credRemaining.textContent = validCount >= PTS_PER_CREDIT
+                ? `You have ${validCount} validated answers — ready for Faculty to grant 1 official credit!`
+                : `Need ${rem} more faculty-validated ${rem === 1 ? 'answer' : 'answers'} for your next official credit.`;
+
+            el.historyCount.textContent = `${mine.length} ${mine.length === 1 ? 'Entry' : 'Entries'}`;
+            el.approvedHistory.innerHTML = mine.length === 0
+                ? `<div class="empty-box"><h3>No approved solutions yet</h3><p>Solve a doubt in the Feed to earn your first +1 point.</p></div>`
+                : mine.map((pe) => `
+                    <div class="history-card ${pe.status === 'revoked' ? 'is-revoked' : ''}">
+                        <div class="post-meta-row">
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                ${entryStatusTag(pe.status)}
+                                <span class="badge badge-pill">${esc(pe.postCategory || 'Academics')}</span>
+                            </div>
+                            <span style="font-size: 0.74rem; color: var(--text-muted);">${timeAgo(pe.approvedAt)}</span>
+                        </div>
+                        <div style="font-weight: 700; font-size: 0.95rem;">${esc(pe.postTitle || 'Campus Question')}</div>
+                        <div class="history-quote">${esc(pe.answerText || '')}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">Approved by <strong>${esc(pe.approvedByName || 'Member')}</strong></div>
+                    </div>`).join('');
+
+            const myPosts = state.posts.filter((p) => p.authorUid === u.uid);
+            el.myPostsCount.textContent = `${myPosts.length} ${myPosts.length === 1 ? 'Post' : 'Posts'}`;
+            el.myPostsList.innerHTML = myPosts.length === 0
+                ? `<div class="empty-box"><h3>No questions posted yet</h3><p>Post a doubt from the Feed whenever you're stuck.</p></div>`
+                : myPosts.map((p) => {
+                    const cc = Array.isArray(p.comments) ? p.comments.length : 0;
+                    const vc = Array.isArray(p.upvotes) ? p.upvotes.length : 0;
+                    return `
+                        <div class="history-card">
+                            <div class="post-meta-row">
+                                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                    <span class="badge badge-pill">${esc(p.category || 'Academics')}</span>
+                                    ${p.solved ? `<span class="badge badge-accent">✓ Solved</span>` : `<span class="badge badge-pill">Open</span>`}
+                                </div>
+                                <span style="font-size: 0.74rem; color: var(--text-muted);">${timeAgo(p)}</span>
+                            </div>
+                            <div style="font-weight: 700; font-size: 0.95rem;">${esc(p.title)}</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary);">↑ ${vc} ${vc === 1 ? 'upvote' : 'upvotes'} • ${cc} ${cc === 1 ? 'solution' : 'solutions'}</div>
+                        </div>`;
+                }).join('');
+        }
+
+        // faculty pending credit approval workspace
+        el.auditFilterBar.addEventListener('click', (e) => {
+            const pill = e.target.closest('.filter-pill');
+            if (!pill) return;
+            state.auditFilter = pill.dataset.auditFilter;
+            el.auditFilterBar.querySelectorAll('.filter-pill').forEach((p) => p.classList.toggle('active', p === pill));
+            renderApprovals();
+        });
+
+        function renderApprovals() {
+            if (!isStaffRole(state.user?.role)) return;
+            syncFacultyCounters();
+
+            const byStu = new Map();
+            const userMap = new Map(state.users.map((u) => [u.uid, u]));
+
+            for (const pe of state.pointEntries) {
+                if (pe.status !== 'pending' && pe.status !== 'valid') continue;
+                if (!byStu.has(pe.studentUid)) {
+                    const u = userMap.get(pe.studentUid);
+                    byStu.set(pe.studentUid, {
+                        uid: pe.studentUid,
+                        name: u ? nameOf(u) : (pe.studentName || 'Student'),
+                        email: u?.email || pe.studentEmail || '',
+                        batch: u?.batchLabel || pe.studentBatch || 'MITS Student',
+                        pts: Number(u?.points || 0),
+                        verified: Number(u?.verifiedCredits || 0),
+                        entries: []
+                    });
+                }
+                byStu.get(pe.studentUid).entries.push(pe);
+            }
+
+            let groups = Array.from(byStu.values()).map((g) => {
+                const pendingCnt = g.entries.filter((x) => x.status === 'pending').length;
+                const validCnt = g.entries.filter((x) => x.status === 'valid').length;
+                g.entries.sort((a, b) => (a.status !== b.status ? (a.status === 'pending' ? -1 : 1) : (b.approvedAt || 0) - (a.approvedAt || 0)));
+                return { ...g, pendingCnt, validCnt, ready: validCnt >= PTS_PER_CREDIT };
+            });
+
+            if (state.auditFilter === 'pending') groups = groups.filter((g) => g.pendingCnt > 0);
+            else if (state.auditFilter === 'ready') groups = groups.filter((g) => g.ready);
+
+            groups.sort((a, b) => (b.ready - a.ready) || (b.pendingCnt - a.pendingCnt) || (b.pts - a.pts));
+
+            if (groups.length === 0) {
+                el.auditBox.innerHTML = `
+                    <div class="empty-box">
+                        <h3>No student answers here</h3>
+                        <p>${state.auditFilter === 'pending' ? 'All approved answers are audited.' : state.auditFilter === 'ready' ? 'No student has hit 25 validated answers yet.' : 'Approved student solutions will show up here for review.'}</p>
+                    </div>`;
+                return;
+            }
+
+            el.auditBox.innerHTML = groups.map((g) => {
+                const collapsed = state.collapsedAudits.has(g.uid);
+                const pct = Math.min(100, (g.validCnt / PTS_PER_CREDIT) * 100);
+                const answersHtml = g.entries.map((pe) => {
+                    const isValid = pe.status === 'valid';
+                    return `
+                        <div class="audit-item ${isValid ? 'valid' : ''}">
+                            <div class="audit-item-top">
+                                <div>
+                                    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px;">
+                                        <span class="badge badge-pill">${esc(pe.postCategory || 'Academics')}</span>
+                                        ${isValid ? `<span class="badge badge-solid-accent">Marked Valid ✅</span>` : `<span class="badge badge-warn">Pending Audit</span>`}
+                                    </div>
+                                    <div class="audit-q-title">Q: ${esc(pe.postTitle || 'Campus Question')}</div>
+                                </div>
+                                <span style="font-size: 0.74rem; color: var(--text-muted);">${timeAgo(pe.approvedAt)}</span>
+                            </div>
+                            <div class="audit-ans-body">${esc(pe.answerText || '')}</div>
+                            <div class="audit-item-foot">
+                                <span>Approved by <strong>${esc(pe.approvedByName || 'OP')}</strong></span>
+                                <div class="audit-actions">
+                                    ${!isValid ? `<button type="button" class="btn btn-primary btn-sm btn-mark-valid" data-eid="${esc(pe.id)}">Mark Valid ✅</button>` : ''}
+                                    <button type="button" class="btn btn-danger-outline btn-sm btn-revoke" data-eid="${esc(pe.id)}">Revoke ❌ (-1 pt)</button>
+                                </div>
+                            </div>
+                        </div>`;
+                }).join('');
+
+                return `
+                    <article class="audit-card ${g.ready ? 'ready' : ''}">
+                        <div class="audit-head">
+                            <div class="audit-meta">
+                                <div class="avatar" aria-hidden="true">${esc(initialsOf(g.name))}</div>
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 7px; flex-wrap: wrap;">
+                                        <span class="stu-name" style="font-size: 1rem;">${esc(g.name)}</span>
+                                        <span class="badge badge-pill">${esc(g.batch)}</span>
+                                        ${g.ready ? `<span class="badge badge-solid-accent">🎓 Ready for Credit</span>` : ''}
+                                    </div>
+                                    <div class="stu-sub">${esc(g.email)}</div>
+                                </div>
+                            </div>
+
+                            <div class="audit-stats">
+                                <span class="badge badge-accent">${g.pts} Total Pts</span>
+                                <span class="badge badge-pill">${g.verified} Official Credits</span>
+                                ${g.pendingCnt > 0 ? `<span class="badge badge-warn">${g.pendingCnt} Pending</span>` : ''}
+                                <button type="button" class="btn btn-secondary btn-sm btn-toggle-audit" data-uid="${esc(g.uid)}">
+                                    ${collapsed ? `Show ${g.entries.length} Answers ▾` : 'Hide Answers ▴'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="audit-prog-strip">
+                            <div class="audit-prog-wrap">
+                                <div class="prog-head">
+                                    <span>Validated Answers Toward Next Credit</span>
+                                    <span>${g.validCnt} / ${PTS_PER_CREDIT} Validated</span>
+                                </div>
+                                <div class="prog-track"><div class="prog-fill" style="width: ${pct}%;"></div></div>
+                            </div>
+
+                            <button type="button" class="btn ${g.ready ? 'btn-primary' : 'btn-secondary'} btn-grant" data-uid="${esc(g.uid)}" data-name="${esc(g.name)}" ${g.ready ? '' : 'disabled'}>
+                                Grant 1 Official Credit 🎓
+                            </button>
+                        </div>
+
+                        <div class="audit-answers ${collapsed ? 'hidden' : ''}">${answersHtml}</div>
+                    </article>`;
+            }).join('');
+        }
+
+        // event delegation for faculty audit actions
+        el.auditBox.addEventListener('click', async (e) => {
+            if (!isStaffRole(state.user?.role)) return;
+
+            const toggle = e.target.closest('.btn-toggle-audit');
+            if (toggle) {
+                const uid = toggle.dataset.uid;
+                if (state.collapsedAudits.has(uid)) state.collapsedAudits.delete(uid);
+                else state.collapsedAudits.add(uid);
+                renderApprovals();
+                return;
+            }
+
+            const validBtn = e.target.closest('.btn-mark-valid');
+            if (validBtn) {
+                const entry = state.pointEntries.find((x) => x.id === validBtn.dataset.eid);
+                if (!entry || entry.status !== 'pending') return;
+                validBtn.disabled = true;
+                validBtn.textContent = 'Saving...';
+                try {
+                    await updateDoc(doc(db, 'pointEntries', entry.id), { status: 'valid' });
+                    if (entry.postId && entry.commentId) {
+                        const pRef = doc(db, 'posts', entry.postId);
+                        const pSnap = await getDoc(pRef);
+                        if (pSnap.exists()) {
+                            const list = Array.isArray(pSnap.data().comments) ? [...pSnap.data().comments] : [];
+                            const i = list.findIndex((c) => c.id === entry.commentId);
+                            if (i !== -1) {
+                                list[i] = { ...list[i], auditStatus: 'valid' };
+                                await updateDoc(pRef, { comments: list });
+                            }
+                        }
+                    }
+                    toast('Marked valid ✅', 'success');
+                } catch (err) {
+                    validBtn.disabled = false;
+                    validBtn.textContent = 'Mark Valid ✅';
+                    toast(errText(err), 'error');
+                }
+                return;
+            }
+
+            const revBtn = e.target.closest('.btn-revoke');
+            if (revBtn) {
+                const entry = state.pointEntries.find((x) => x.id === revBtn.dataset.eid);
+                if (!entry || (entry.status !== 'pending' && entry.status !== 'valid')) return;
+                const ok = await confirmAction({
+                    title: 'Revoke Answer (-1 pt)?',
+                    message: `Revoke ${entry.studentName}'s answer on "${entry.postTitle}"?`,
+                    warning: `This deducts 1 point from ${entry.studentName} and removes the approval tag on the post.`,
+                    okLabel: 'Revoke (-1 pt)',
+                    okVariant: 'danger'
+                });
+                if (!ok) return;
+
+                revBtn.disabled = true;
+                revBtn.textContent = 'Revoking...';
+                try {
+                    await updateDoc(doc(db, 'pointEntries', entry.id), { status: 'revoked' });
+                    if (entry.postId && entry.commentId) {
+                        const pRef = doc(db, 'posts', entry.postId);
+                        const pSnap = await getDoc(pRef);
+                        if (pSnap.exists()) {
+                            const list = Array.isArray(pSnap.data().comments) ? [...pSnap.data().comments] : [];
+                            const i = list.findIndex((c) => c.id === entry.commentId);
+                            if (i !== -1) {
+                                list[i] = { ...list[i], approved: false, auditStatus: 'revoked' };
+                                const stillSolved = list.some((c) => c.approved === true);
+                                await updateDoc(pRef, { comments: list, solved: stillSolved });
+                            }
+                        }
+                    }
+                    await updateStudentPts(entry.studentUid, -1);
+                    toast(`Revoked & deducted -1 pt from ${entry.studentName}.`, 'warning');
+                } catch (err) {
+                    revBtn.disabled = false;
+                    revBtn.textContent = 'Revoke ❌ (-1 pt)';
+                    toast(errText(err), 'error');
+                }
+                return;
+            }
+
+            const grantBtn = e.target.closest('.btn-grant');
+            if (grantBtn) {
+                const uid = grantBtn.dataset.uid;
+                const name = grantBtn.dataset.name;
+                const validList = state.pointEntries
+                    .filter((pe) => pe.studentUid === uid && pe.status === 'valid')
+                    .sort((a, b) => (a.approvedAt || 0) - (b.approvedAt || 0));
+
+                if (validList.length < PTS_PER_CREDIT) {
+                    return toast(`Needs ${PTS_PER_CREDIT} validated answers first.`, 'warning');
+                }
+                const ok = await confirmAction({
+                    title: 'Grant 1 Official Credit?',
+                    message: `Consume ${PTS_PER_CREDIT} oldest validated answers and grant 1 official credit to ${name}?`,
+                    okLabel: 'Grant 1 Official Credit 🎓',
+                    okVariant: 'primary'
+                });
+                if (!ok) return;
+
+                grantBtn.disabled = true;
+                grantBtn.textContent = 'Granting...';
+                try {
+                    const batch = writeBatch(db);
+                    validList.slice(0, PTS_PER_CREDIT).forEach((pe) => {
+                        batch.update(doc(db, 'pointEntries', pe.id), { status: 'consumed' });
+                    });
+                    batch.update(doc(db, 'users', uid), { verifiedCredits: increment(1) });
+                    await batch.commit();
+                    toast(`Granted 1 Official Credit to ${name}! 🎓`, 'success');
+                } catch (err) {
+                    grantBtn.disabled = false;
+                    grantBtn.textContent = 'Grant 1 Official Credit 🎓';
+                    toast(errText(err), 'error');
+                }
+            }
+        });
+
+        // super admin faculty whitelist view
+        function renderWhitelist() {
+            if (!isSuperAdmin(state.user)) return;
+            syncWhitelistBadge();
+
+            const registeredEmails = new Set(
+                state.users
+                    .filter((u) => isStaffRole(u.role) && u.email)
+                    .map((u) => u.email.toLowerCase())
+            );
+
+            const total = state.whitelist.length;
+            let regCount = 0;
+            state.whitelist.forEach((w) => {
+                if (registeredEmails.has((w.email || w.id || '').toLowerCase())) regCount++;
+            });
+
+            el.wlTotal.textContent = total;
+            el.wlRegistered.textContent = regCount;
+            el.wlPending.textContent = Math.max(0, total - regCount);
+
+            const filtered = state.whitelist.filter((w) => {
+                if (!state.wlSearch) return true;
+                const hay = `${w.email || ''} ${w.name || ''} ${w.department || ''}`.toLowerCase();
+                return hay.includes(state.wlSearch);
+            });
+
+            if (filtered.length === 0) {
+                el.wlTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 34px; color: var(--text-secondary);">${
+                    state.wlSearch
+                        ? 'No whitelisted emails match your filter.'
+                        : 'No faculty emails whitelisted yet. Add a professor above to allow faculty sign-ups.'
+                }</td></tr>`;
+                return;
+            }
+
+            el.wlTbody.innerHTML = filtered.map((w) => {
+                const email = (w.email || w.id || '').toLowerCase();
+                const isReg = registeredEmails.has(email);
+                const profUser = state.users.find((u) => (u.email || '').toLowerCase() === email);
+                const labelName = profUser ? nameOf(profUser) : (w.name || '—');
+                return `
+                    <tr>
+                        <td style="font-weight: 700;">${esc(email)}</td>
+                        <td>
+                            <div class="stu-name">${esc(labelName)}</div>
+                            ${w.department ? `<div class="stu-sub">${esc(w.department)}</div>` : ''}
+                        </td>
+                        <td>
+                            ${isReg
+                                ? `<span class="badge badge-accent">✓ Registered</span>`
+                                : `<span class="badge badge-warn">⏳ Invited (Pending Sign Up)</span>`}
+                        </td>
+                        <td style="font-size: 0.78rem; color: var(--text-secondary);">${timeAgo(w.addedAt)}</td>
+                        <td class="text-right">
+                            <button type="button" class="btn btn-danger-outline btn-sm btn-wl-rm" data-email="${esc(email)}">Remove</button>
+                        </td>
+                    </tr>`;
+            }).join('');
+        }
+
+        el.wlSearch.addEventListener('input', () => {
+            state.wlSearch = el.wlSearch.value.trim().toLowerCase();
+            renderWhitelist();
+        });
+
+        el.wlForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!isSuperAdmin(state.user)) return;
+
+            const email = el.wlEmail.value.trim().toLowerCase();
+            const name = el.wlName.value.trim();
+            const department = el.wlDept.value.trim();
+
+            if (!email || !email.includes('@')) return toast('Enter a valid faculty email.', 'warning');
+            if (isStudentEmail(email)) return toast('That looks like a student roll email, not a faculty email.', 'warning');
+            if (isSuperAdminEmail(email)) return toast('Super Admin already has full access.', 'warning');
+
+            el.wlSubmit.disabled = true;
+            el.wlSubmit.innerHTML = `<span class="spinner-sm"></span> Adding...`;
+            try {
+                await setDoc(doc(db, 'faculty_whitelist', email), {
+                    email,
+                    name,
+                    department,
+                    addedBy: state.user.email,
+                    addedAt: Date.now()
+                });
+                el.wlForm.reset();
+                toast(`${email} added to Faculty Whitelist!`, 'success');
+            } catch (err) {
+                toast(errText(err), 'error');
+            } finally {
+                el.wlSubmit.disabled = false;
+                el.wlSubmit.textContent = '+ Add Faculty';
+            }
+        });
+
+        el.wlTbody.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.btn-wl-rm');
+            if (!btn || !isSuperAdmin(state.user)) return;
+            const email = btn.dataset.email;
+            const ok = await confirmAction({
+                title: 'Remove from Faculty Whitelist?',
+                message: `Remove "${email}" from the Faculty Whitelist? They will no longer be able to sign up as Faculty.`,
+                okLabel: 'Remove Email',
+                okVariant: 'danger'
+            });
+            if (!ok) return;
+
+            btn.disabled = true;
+            try {
+                await deleteDoc(doc(db, 'faculty_whitelist', email));
+                toast(`${email} removed from whitelist.`, 'success');
+            } catch (err) {
+                btn.disabled = false;
+                toast(errText(err), 'error');
+            }
+        });
+    </script>
+</body>
+</html>
